@@ -6,6 +6,8 @@
 - 작성일: 2026-10-29
 - 코드와 배포 설정을 기준으로 작성했습니다. 실제 운영 중인 인스턴스와 외부 서비스의 현재 상태를 확인한 운영 현황도는 아닙니다.
 
+[GRAB 테마를 적용한 HTML 구성도 보기](architecture.html)
+
 ```mermaid
 flowchart LR
     subgraph client ["클라이언트"]

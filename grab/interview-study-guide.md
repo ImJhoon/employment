@@ -4,8 +4,8 @@
 
 요청 한 건이 어떻게 처리되는지 이해하고, 그 위에 포트폴리오의 세 가지 개선 사례를 연결한다. Nginx, 회원 ID 변환, 부하 테스트의 관계를 먼저 정리하면 각 사례의 필요성과 검증 결과를 설명하기 쉬워진다.
 
-- 대상 포트폴리오: [GRAB ver2](ver2/portfolio-short.md)
-- 시스템 구성 참고: [GRAB 시스템 아키텍처](ver2/architecture.md)
+- 대상 포트폴리오: [GRAB ver2](portfolio-short.md)
+- 시스템 구성 참고: [GRAB 시스템 아키텍처](architecture.md)
 - 첫 학습 주제: `/api/v1/users/me` 한 요청의 전체 흐름
 - 첫 번째 목표: 그림 없이 요청 흐름을 2분 안에 설명하기
 

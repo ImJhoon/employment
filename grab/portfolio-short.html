@@ -31,6 +31,11 @@
 <section id="overview" class="document-section" aria-labelledby="overview-title"><header class="section-header"><h2 id="overview-title"><span class="section-number" aria-hidden="true">01</span>프로젝트 개요</h2></header>
 <dl class="project-facts"><div class="fact-row"><dt>기간 · 인원</dt><dd>2026.09.22 ~ 2026.11.04 (약 6주) · 4명</dd></div><div class="fact-row"><dt>담당</dt><dd>회원·인증 전 영역 (설계, API, 프론트 연동, 부하 측정·개선), 백엔드 초기 환경 구성</dd></div><div class="fact-row"><dt>기술</dt><dd><ul class="tech-list" aria-label="사용 기술"><li>Java 17</li><li>Spring Boot 4</li><li>Spring Security</li><li>JPA</li><li>PostgreSQL</li><li>Redis</li><li>Caffeine</li><li>React</li><li>Docker</li><li>GitHub Actions</li><li>k6</li></ul>
 </dd></div><div class="fact-row"><dt>저장소</dt><dd><a href="https://github.com/prgrms-aibe-devcourse/AIBE7_FinalProject_Team3">GitHub</a></dd></div></dl>
+<h3 id="architecture-title" class="block-label">시스템 아키텍처</h3>
+<figure class="architecture-figure" aria-labelledby="architecture-title" aria-describedby="architecture-caption">
+<a class="architecture-preview" href="architecture.html" aria-label="GRAB 시스템 아키텍처 원본 크기로 보기"><img src="assets/grab-architecture.svg" alt="React에서 Nginx를 거쳐 내부 Caffeine 캐시를 둔 Spring Boot로 연결되며, 백엔드는 PostgreSQL·Valkey·Supabase Storage와 외부 서비스·검증 도구에 연결됩니다." width="1280" height="720" decoding="async"></a>
+<figcaption id="architecture-caption">팀 전체 서비스 구성입니다. 코드·배포 설정 기준이며 실제 운영 현황을 뜻하지 않습니다. 그림을 누르면 원본 크기로 볼 수 있습니다. <a href="architecture.md">설계 설명·근거</a></figcaption>
+</figure>
 </section>
 
 <section id="responsibilities" class="document-section" aria-labelledby="responsibilities-title"><header class="section-header"><h2 id="responsibilities-title"><span class="section-number" aria-hidden="true">02</span>담당 업무</h2></header>
@@ -107,9 +112,6 @@
 <ul class="detail-list"><li><strong class="item-label">이메일 인증 무차별 대입 방지:</strong> 코드를 비교하기 전에 Redis <code>INCR</code>로 시도 횟수를 올려, 틀린 코드를 동시에 보내도 비교는 5번만 일어나게 했습니다. (<a href="https://github.com/prgrms-aibe-devcourse/AIBE7_FinalProject_Team3/blob/223b697783bbd712c68d359999f42ad141353802/Backend/src/main/java/org/example/grab/domain/user/service/EmailVerificationService.java">코드</a>, <a href="https://github.com/prgrms-aibe-devcourse/AIBE7_FinalProject_Team3/pull/63">PR #63</a>)</li><li><strong class="item-label">카카오·구글 OIDC 로그인:</strong> PKCE·state·nonce를 적용하고 제공자 식별자로만 회원을 찾아, 같은 이메일의 다른 계정과 자동으로 연결되지 않게 했습니다. (<a href="https://github.com/prgrms-aibe-devcourse/AIBE7_FinalProject_Team3/blob/223b697783bbd712c68d359999f42ad141353802/Backend/src/main/java/org/example/grab/domain/auth/support/oauth2/SocialAuthorizationRequestResolver.java">코드</a>, <a href="https://github.com/prgrms-aibe-devcourse/AIBE7_FinalProject_Team3/pull/126">PR #126</a>)</li><li><strong class="item-label">프로필 이미지 정합성:</strong> 이전 이미지는 DB 커밋 뒤에만 지워, 롤백돼도 DB가 없는 파일을 가리키지 않게 했습니다. (<a href="https://github.com/prgrms-aibe-devcourse/AIBE7_FinalProject_Team3/blob/223b697783bbd712c68d359999f42ad141353802/Backend/src/main/java/org/example/grab/domain/user/service/ProfileImageCleanupListener.java">코드</a>, <a href="https://github.com/prgrms-aibe-devcourse/AIBE7_FinalProject_Team3/pull/163">PR #163</a>)</li></ul>
 </section>
 
-<section id="retrospective" class="document-section" aria-labelledby="retrospective-title"><header class="section-header"><h2 id="retrospective-title"><span class="section-number" aria-hidden="true">07</span>회고</h2></header>
-<ul class="detail-list"><li><strong class="item-label">실패했을 때의 동작을 먼저 정했습니다.</strong> 상태가 Redis, DB, 외부 저장소에 나뉠 때는 어디까지 처리되고 무엇이 남는지부터 정해야 했습니다.</li><li><strong class="item-label">보안 정책과 사용자 경험은 함께 설계해야 했습니다.</strong> 엄격한 재사용 탐지는 정상 사용자를 로그아웃시키고, 가입 여부를 숨기는 더미 해시는 부하 비용으로 돌아왔습니다.</li><li><strong class="item-label">왕복과 대기를 함께 봐야 병목을 설명할 수 있었습니다.</strong> 단순한 ID 조회도 요청마다 별도 트랜잭션을 열면 커넥션을 점유했습니다. 같은 계정 수와 환경에서 전후를 교대 측정해 개선 효과를 확인했습니다.</li></ul>
-</section>
 </div></main>
 <footer class="page-footer shell"><span>한재훈 · GRAB 포트폴리오</span><a href="#top">맨 위로</a></footer>
 </body>
