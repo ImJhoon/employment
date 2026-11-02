@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GRAB 시스템 아키텍처</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Noto+Sans+KR:wght@400;500;600&amp;family=Noto+Serif+KR:wght@400&amp;display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    :root {
+      color-scheme: light;
+      /* portfolio.css의 GRAB 토큰을 이 파일에만 적용합니다. */
+      --paper: #f1f2eb;
+      --paper-2: #e9eae3;
+      --ink: #191b17;
+      --ink-strong: #111111;
+      --muted: #64685e;
+      --soft: #64685e;
+      --rule: #dedfd8;
+      --rule-solid: #dedfd8;
+      --accent: #456315;
+      --accent-tint: #f3f7e9;
+      --link: #3d4237;
+      --brand: #bdff28;
+      --font-sans: 'Pretendard', 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Segoe UI', sans-serif;
+      --font-serif: 'Instrument Serif', 'Noto Serif KR', serif;
+      --font-mono: Consolas, 'Courier New', ui-monospace, monospace;
+    }
+    body { margin: 0; padding: 40px 24px; background: var(--paper); color: var(--ink); font-family: var(--font-sans); }
+    main { width: 1280px; max-width: 100%; min-width: 0; margin: 0 auto; }
+    header { padding: 0 16px 24px; border-bottom: 1px solid var(--rule); }
+    .eyebrow { margin: 0 0 12px; color: var(--muted); font: 500 11px/1.5 var(--font-mono); letter-spacing: 0.12em; }
+    h1 { margin: 0; font: 400 28px/1.5 var(--font-serif); letter-spacing: -0.02em; text-decoration: underline; text-decoration-color: var(--brand); text-decoration-thickness: 4px; text-underline-offset: 8px; }
+    .intro { margin: 12px 0 0; color: var(--link); font-size: 14px; line-height: 1.8; word-break: keep-all; }
+    .metadata { display: flex; flex-wrap: wrap; gap: 8px 24px; margin-top: 16px; color: var(--muted); font-size: 12px; line-height: 1.8; }
+    code { font-family: var(--font-mono); overflow-wrap: anywhere; }
+    figure { margin: 16px 0 0; }
+    .diagram-container { width: 100%; overflow-x: auto; }
+    .diagram-container:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+    svg { width: 100%; min-width: 1280px; display: block; }
+    svg text { fill: var(--ink); font-family: var(--font-sans); }
+    .zone { fill: rgba(25,27,23,0.02); stroke: var(--rule); stroke-width: 1; }
+    .zone-name { fill: var(--soft); font-size: 12px; font-weight: 500; }
+    .connector { fill: none; stroke: var(--muted); stroke-width: 1.2; marker-end: url(#arrow); }
+    .http { stroke: var(--link); marker-end: url(#arrow-link); }
+    .integration { stroke: var(--link); stroke-width: 1; stroke-dasharray: 5 4; marker-end: url(#arrow-link); }
+    .label-mask { fill: var(--paper); }
+    .edge-label { fill: var(--soft); font-size: 12px; font-weight: 500; text-anchor: middle; }
+    .technical { fill: var(--soft); font: 400 9px var(--font-mono); }
+    .latin-label { fill: var(--soft); font: 400 8px var(--font-mono); text-anchor: middle; letter-spacing: 0.06em; }
+    .node-mask { fill: var(--paper); }
+    .node-input { fill: rgba(100,104,94,0.10); stroke: var(--soft); }
+    .node-backend { fill: #fff; stroke: var(--ink); }
+    .node-focal { fill: var(--accent-tint); stroke: var(--accent); stroke-width: 1.2; }
+    .node-store { fill: rgba(25,27,23,0.05); stroke: var(--muted); }
+    .node-external { fill: rgba(25,27,23,0.03); stroke: rgba(25,27,23,0.30); }
+    .node-optional { fill: rgba(25,27,23,0.02); stroke: rgba(25,27,23,0.30); stroke-dasharray: 4 3; }
+    .tag-box { fill: var(--paper); stroke: var(--rule-solid); stroke-width: 0.8; }
+    .tag { fill: var(--soft); font: 500 8px var(--font-mono); letter-spacing: 0.08em; }
+    .node-name { font-size: 12px; font-weight: 600; }
+    .node-copy { fill: var(--muted); font-size: 12px; }
+    .legend-text { fill: var(--muted); font-size: 12px; }
+    figcaption { padding: 20px 16px 0; border-top: 1px solid var(--rule); color: var(--link); font-size: 13px; line-height: 1.9; word-break: keep-all; }
+    figcaption p { margin: 0 0 8px; }
+    footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px; padding: 16px; color: var(--muted); font-size: 12px; line-height: 1.8; }
+    a { color: var(--accent); text-underline-offset: 4px; }
+    @media (max-width: 600px) { body { padding: 24px 12px; } header, figcaption, footer { padding-left: 4px; padding-right: 4px; } }
+    @media print {
+      @page { size: A4 landscape; margin: 10mm; }
+      body { padding: 0; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+      .diagram-container { overflow-x: visible; }
+      svg { min-width: 0; }
+      figure { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Import: architecture.md, Mermaid block 0. html / doc-wide / faithful / engineer.
+       11 source components -> 11 drawn components; 10 edges -> 10 edges.
+       All five group memberships are retained. Single-node client/gateway groups
+       use headings; service, datastore and external groups use zone frames.
+       No components or relationships merged, collapsed or dropped.
+       Local brand tokens only; the installed skill and saved profiles are unchanged.
+       Font fallback: Pretendard is used if installed; otherwise Noto Sans KR.
+       Instrument Serif / Noto Serif KR provide the diagram title's serif treatment. -->
+  <main>
+    <header>
+      <p class="eyebrow">GRAB / SYSTEM ARCHITECTURE</p>
+      <h1>GRAB 시스템 아키텍처</h1>
+      <p class="intro">웹 요청의 진입점부터 하나의 백엔드 애플리케이션, 공유 저장소와 외부 연동까지의 연결을 보여 줍니다.</p>
+      <div class="metadata">
+        <span>기준 커밋 <code>4bd89c4f5399a32b63b1f32bff23319619bf8466</code></span>
+        <span>원문 작성 2026-10-29 · 다이어그램 변환 2026-10-30</span>
+      </div>
+    </header>
+    <figure>
+      <div class="diagram-container" tabindex="0" role="region" aria-label="시스템 구성도. 좁은 화면에서는 가로로 스크롤할 수 있습니다.">
+        <svg viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="architecture-title architecture-desc">
+          <title id="architecture-title">GRAB 시스템 아키텍처</title>
+          <desc id="architecture-desc">React 웹 요청이 Nginx를 거쳐 내부 Caffeine 캐시를 둔 Spring Boot에 도달하며 백엔드는 공유 저장소 세 곳과 외부 연동 및 검증 도구 다섯 곳에 연결됩니다.</desc>
+          <defs>
+            <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#64685e"/></marker>
+            <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#456315"/></marker>
+            <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#3d4237"/></marker>
+          </defs>
+          <rect width="1280" height="720" fill="#f1f2eb"/>
+
+          <!-- Zones precede all connectors and nodes. These are source groupings, not network security boundaries. -->
+          <g data-source-group="service">
+            <rect class="zone" x="400" y="172" width="288" height="260" rx="8"/>
+            <text class="zone-name" x="424" y="196">백엔드 · EC2 / Docker</text>
+          </g>
+          <g data-source-group="datastore">
+            <rect class="zone" x="976" y="48" width="280" height="420" rx="8"/>
+            <text class="zone-name" x="1000" y="76">공유 저장소</text>
+          </g>
+          <g data-source-group="external">
+            <rect class="zone" x="24" y="492" width="1232" height="148" rx="8"/>
+            <text class="zone-name" x="164" y="516">외부 연동 · 검증 도구</text>
+          </g>
+
+          <!-- Ten independent connectors. Every backend port is distinct. -->
+          <g data-source="web" data-target="nginx">
+            <title>HTTPS · REST / SSE</title>
+            <path class="connector http" d="M184 316 H232"/>
+            <rect class="label-mask" x="188" y="296" width="40" height="12" rx="2"/>
+            <text class="latin-label" x="208" y="305">HTTPS</text>
+          </g>
+          <g data-source="nginx" data-target="backend">
+            <title>API 전달</title>
+            <path class="connector http" d="M376 316 H424"/>
+            <rect class="label-mask" x="380" y="296" width="40" height="12" rx="2"/>
+            <text class="latin-label" x="400" y="305">API</text>
+          </g>
+          <g data-source="backend" data-target="postgres">
+            <title>영속 데이터 읽기·쓰기</title>
+            <path class="connector" d="M664 264 H832 Q840 264 840 256 V148 Q840 140 848 140 H1000"/>
+            <rect class="label-mask" x="680" y="240" width="144" height="16" rx="2"/>
+            <text class="edge-label" x="752" y="252">영속 데이터 읽기·쓰기</text>
+          </g>
+          <g data-source="backend" data-target="redis">
+            <title>인증 임시 상태 · TTL</title>
+            <path class="connector" d="M664 316 H872 Q880 316 880 308 V280 Q880 272 888 272 H1000"/>
+            <rect class="label-mask" x="700" y="292" width="144" height="16" rx="2"/>
+            <text class="edge-label" x="772" y="304">인증 임시 상태 · TTL</text>
+          </g>
+          <g data-source="backend" data-target="storage">
+            <title>서명 URL · 객체 관리</title>
+            <path class="connector" d="M664 368 H912 Q920 368 920 376 V380 Q920 388 928 388 H1000"/>
+            <rect class="label-mask" x="720" y="344" width="144" height="16" rx="2"/>
+            <text class="edge-label" x="792" y="356">서명 URL · 객체 관리</text>
+          </g>
+          <g data-source="backend" data-target="oidc">
+            <title>OIDC 인증 연동</title>
+            <path class="connector integration" d="M464 420 V448 Q464 456 456 456 H148 Q140 456 140 464 V536"/>
+            <rect class="label-mask" x="148" y="468" width="128" height="16" rx="2"/>
+            <text class="edge-label" x="212" y="480">OIDC 인증 연동</text>
+          </g>
+          <g data-source="backend" data-target="smtp">
+            <title>인증·알림 메일</title>
+            <path class="connector integration" d="M504 420 V472 Q504 480 496 480 H396 Q388 480 388 488 V536"/>
+            <rect class="label-mask" x="396" y="504" width="120" height="16" rx="2"/>
+            <text class="edge-label" x="456" y="516">인증·알림 메일</text>
+          </g>
+          <g data-source="backend" data-target="toss">
+            <title>결제 승인·조회</title>
+            <path class="connector integration" d="M544 420 V472 Q544 480 552 480 H628 Q636 480 636 488 V536"/>
+            <rect class="label-mask" x="644" y="504" width="120" height="16" rx="2"/>
+            <text class="edge-label" x="704" y="516">결제 승인·조회</text>
+          </g>
+          <g data-source="backend" data-target="gemini">
+            <title>설명·임베딩 생성</title>
+            <path class="connector integration" d="M584 420 V452 Q584 460 592 460 H876 Q884 460 884 468 V536"/>
+            <rect class="label-mask" x="892" y="500" width="128" height="16" rx="2"/>
+            <text class="edge-label" x="956" y="512">설명·임베딩 생성</text>
+          </g>
+          <g data-source="backend" data-target="prometheus">
+            <title>Actuator 메트릭 노출</title>
+            <path class="connector integration" d="M624 420 V432 Q624 440 632 440 H1124 Q1132 440 1132 448 V536"/>
+            <rect class="label-mask" x="1004" y="468" width="120" height="16" rx="2"/>
+            <text class="edge-label" x="1064" y="480">메트릭 노출</text>
+          </g>
+
+          <!-- Client and gateway retain their one-node group labels without extra frames. -->
+          <g data-node-id="web" data-source-group="client">
+            <text class="zone-name" x="40" y="248">클라이언트</text>
+            <rect class="node-mask" x="40" y="276" width="144" height="80" rx="6"/>
+            <rect class="node-input" x="40" y="276" width="144" height="80" rx="6"/>
+            <rect class="tag-box" x="52" y="284" width="40" height="12" rx="2"/>
+            <text class="tag" x="60" y="293">WEB</text>
+            <text class="node-name" x="56" y="316">React</text>
+            <text class="node-copy" x="56" y="340">웹 클라이언트</text>
+          </g>
+          <g data-node-id="nginx" data-source-group="gateway">
+            <text class="zone-name" x="232" y="232">진입점</text>
+            <text class="zone-name" x="232" y="252">EC2 배포 설정</text>
+            <rect class="node-mask" x="232" y="276" width="144" height="80" rx="6"/>
+            <rect class="node-backend" x="232" y="276" width="144" height="80" rx="6"/>
+            <rect class="tag-box" x="244" y="284" width="48" height="12" rx="2"/>
+            <text class="tag" x="252" y="293">PROXY</text>
+            <text class="node-name" x="248" y="316">Nginx</text>
+            <text class="technical" x="248" y="334">HTTPS · REST / SSE</text>
+            <text class="node-copy" x="248" y="352">프록시</text>
+          </g>
+          <g data-node-id="backend" data-source-group="service">
+            <rect class="node-mask" x="424" y="212" width="240" height="208" rx="6"/>
+            <rect class="node-focal" x="424" y="212" width="240" height="208" rx="6"/>
+            <rect class="tag-box" x="440" y="228" width="40" height="12" rx="2"/>
+            <text class="tag" x="448" y="237">APP</text>
+            <text class="node-name" x="448" y="272">Spring Boot</text>
+            <text class="node-copy" x="448" y="296">하나의 백엔드 애플리케이션</text>
+            <rect x="448" y="332" width="192" height="56" rx="4" fill="#f1f2eb" stroke="#dedfd8"/>
+            <text class="node-name" x="464" y="352">Caffeine</text>
+            <text class="node-copy" x="464" y="376">인스턴스 내부 캐시</text>
+          </g>
+          <g data-node-id="postgres" data-source-group="datastore">
+            <rect class="node-mask" x="1000" y="100" width="240" height="80" rx="6"/>
+            <rect class="node-store" x="1000" y="100" width="240" height="80" rx="6"/>
+            <rect class="tag-box" x="1012" y="108" width="32" height="12" rx="2"/>
+            <text class="tag" x="1020" y="117">DB</text>
+            <text class="node-name" x="1016" y="144">PostgreSQL</text>
+            <text class="technical" x="1016" y="164">Supabase</text>
+          </g>
+          <g data-node-id="redis" data-source-group="datastore">
+            <rect class="node-mask" x="1000" y="232" width="240" height="80" rx="6"/>
+            <rect class="node-store" x="1000" y="232" width="240" height="80" rx="6"/>
+            <rect class="tag-box" x="1012" y="240" width="40" height="12" rx="2"/>
+            <text class="tag" x="1020" y="249">TTL</text>
+            <text class="node-name" x="1016" y="276">Valkey</text>
+            <text class="node-copy" x="1016" y="300">Redis 호환 / TLS</text>
+          </g>
+          <g data-node-id="storage" data-source-group="datastore">
+            <rect class="node-mask" x="1000" y="348" width="240" height="80" rx="6"/>
+            <rect class="node-store" x="1000" y="348" width="240" height="80" rx="6"/>
+            <rect class="tag-box" x="1012" y="356" width="56" height="12" rx="2"/>
+            <text class="tag" x="1020" y="365">OBJECT</text>
+            <text class="node-name" x="1016" y="392">Supabase Storage</text>
+            <text class="node-copy" x="1016" y="416">이미지 객체</text>
+          </g>
+          <g data-node-id="oidc" data-source-group="external">
+            <rect class="node-mask" x="40" y="536" width="200" height="80" rx="6"/>
+            <rect class="node-external" x="40" y="536" width="200" height="80" rx="6"/>
+            <rect class="tag-box" x="52" y="544" width="40" height="12" rx="2"/>
+            <text class="tag" x="60" y="553">OIDC</text>
+            <text class="node-name" x="56" y="576">Kakao / Google</text>
+            <text class="technical" x="56" y="600">OIDC</text>
+          </g>
+          <g data-node-id="smtp" data-source-group="external">
+            <rect class="node-mask" x="288" y="536" width="200" height="80" rx="6"/>
+            <rect class="node-external" x="288" y="536" width="200" height="80" rx="6"/>
+            <rect class="tag-box" x="300" y="544" width="40" height="12" rx="2"/>
+            <text class="tag" x="308" y="553">MAIL</text>
+            <text class="node-name" x="304" y="576">SMTP</text>
+            <text class="node-copy" x="304" y="600">이메일 발송</text>
+          </g>
+          <g data-node-id="toss" data-source-group="external">
+            <rect class="node-mask" x="536" y="536" width="200" height="80" rx="6"/>
+            <rect class="node-external" x="536" y="536" width="200" height="80" rx="6"/>
+            <rect class="tag-box" x="548" y="544" width="40" height="12" rx="2"/>
+            <text class="tag" x="556" y="553">TEST</text>
+            <text class="node-name" x="552" y="576">Toss Payments</text>
+            <text class="node-copy" x="552" y="600">테스트 환경</text>
+          </g>
+          <g data-node-id="gemini" data-source-group="external">
+            <rect class="node-mask" x="784" y="536" width="200" height="80" rx="6"/>
+            <rect class="node-optional" x="784" y="536" width="200" height="80" rx="6"/>
+            <rect class="tag-box" x="796" y="544" width="64" height="12" rx="2"/>
+            <text class="tag" x="804" y="553">OPTIONAL</text>
+            <text class="node-name" x="800" y="576">Gemini</text>
+            <text class="node-copy" x="800" y="600">선택 설정 · 기본 비활성</text>
+          </g>
+          <g data-node-id="prometheus" data-source-group="external">
+            <rect class="node-mask" x="1032" y="536" width="200" height="80" rx="6"/>
+            <rect class="node-external" x="1032" y="536" width="200" height="80" rx="6"/>
+            <rect class="tag-box" x="1044" y="544" width="48" height="12" rx="2"/>
+            <text class="tag" x="1052" y="553">LOCAL</text>
+            <text class="node-name" x="1048" y="576">Prometheus</text>
+            <text class="node-copy" x="1048" y="596">로컬 측정</text>
+            <text class="technical" x="1048" y="608">Actuator</text>
+          </g>
+
+          <!-- Bottom legend is outside the component area. -->
+          <line x1="40" y1="660" x2="1240" y2="660" stroke="#dedfd8"/>
+          <line x1="40" y1="680" x2="72" y2="680" stroke="#64685e" stroke-width="1.2"/>
+          <text class="legend-text" x="84" y="684">주요 요청·저장소 연결</text>
+          <line x1="304" y1="680" x2="336" y2="680" stroke="#3d4237" stroke-dasharray="5 4"/>
+          <text class="legend-text" x="348" y="684">외부 연동·검증 도구 연결</text>
+          <rect x="652" y="672" width="20" height="16" rx="2" fill="#f3f7e9" stroke="#456315"/>
+          <text class="legend-text" x="684" y="684">백엔드</text>
+          <rect x="812" y="672" width="20" height="16" rx="2" fill="rgba(25,27,23,0.05)" stroke="#64685e"/>
+          <text class="legend-text" x="844" y="684">공유 저장소</text>
+          <rect x="1020" y="672" width="20" height="16" rx="2" fill="rgba(25,27,23,0.02)" stroke="#64685e" stroke-dasharray="4 3"/>
+          <text class="legend-text" x="1052" y="684">선택 설정</text>
+          <text class="legend-text" x="40" y="708">점선은 비동기 호출을 뜻하지 않습니다. 화살표는 원문에 정의된 연결 방향을 나타냅니다.</text>
+        </svg>
+      </div>
+      <figcaption>
+        <p>코드와 배포 설정을 기준으로 정리한 팀 전체 구성도입니다. 실제 운영 현황과 개인 기여 범위는 별도로 구분합니다. Prometheus 연결은 Actuator 메트릭 노출 관계를 표시합니다.</p>
+        <p>이미지 업로드 시 브라우저가 Storage로 직접 PUT하는 경로, OIDC의 브라우저 왕복, CI/CD 경로는 원문과 동일하게 생략했습니다.</p>
+      </figcaption>
+    </figure>
+    <footer>
+      <span>원본 구성 요소 11개 · 연결 10개 보존 · 구성 요소·연결의 병합 및 삭제 없음</span>
+      <a href="grab.md">설계 설명과 커밋별 근거 보기</a>
+    </footer>
+  </main>
+</body>
+</html>

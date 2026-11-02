@@ -15,7 +15,7 @@
 </header>
 <main id="top" class="shell">
   <header class="hero">
-    <h1>마주한끼</h1>
+    <h1><img class="project-logo" src="assets/majuhankki-wordmark.png" alt="마주한끼" width="1603" height="461" decoding="async"></h1>
     <p class="lead">지역·시간·식사 취향·대화 성향을 바탕으로 오늘 함께 식사할 한 사람을 연결하는 실시간 1:1 매칭 서비스입니다. 매칭 요청, 후보 제안, 양쪽 수락, 채팅, 후기까지 이어집니다. 매칭 전 과정을 담당하며, 동시에 들어오는 응답 속에서도 매칭이 한 번만 확정되도록 하고 PostgreSQL과 Valkey의 대기 상태를 맞추는 구조를 구현했습니다.</p>
   </header>
   <section class="highlights" aria-labelledby="highlights-title">
@@ -32,7 +32,10 @@
 <div class="fact-row"><dt>기술</dt><dd><ul class="tech-list" aria-label="사용 기술"><li>Java 17</li><li>Spring Boot 4</li><li>Spring Security</li><li>JPA</li><li>PostgreSQL (PostGIS, pgvector)</li><li>Valkey</li><li>WebSocket(STOMP)</li><li>Spring AI</li><li>Docker</li></ul></dd></div>
 <div class="fact-row"><dt>저장소</dt><dd><a href="https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04">GitHub</a></dd></div>
 </dl>
-<p class="baseline-note">구현 설명은 기준 커밋 <code>310120e</code>를 따릅니다. 후보 선정은 본인 구현 시점(PR #55)과 후속 팀 변경을 구분했습니다.</p>
+<h3 id="architecture-title" class="block-label">시스템 아키텍처</h3>
+<figure class="architecture-figure" aria-labelledby="architecture-title">
+<a class="architecture-preview" href="architecture.html" aria-label="마주한끼 시스템 아키텍처 원본 크기로 보기"><img src="assets/majuhankki-architecture.svg" alt="브라우저가 REST와 SockJS·STOMP로 Render의 Spring Boot에 연결되며, 백엔드는 PostgreSQL·Valkey·Supabase Storage와 Kakao·Gemini 등 외부 서비스·검증 도구에 연결됩니다." width="1280" height="720" decoding="async"></a>
+</figure>
 </section>
 <section id="responsibilities" class="document-section" aria-labelledby="responsibilities-title"><header class="section-header"><h2 id="responsibilities-title"><span class="section-number" aria-hidden="true">02</span>담당 업무</h2></header>
 <ul class="detail-list">

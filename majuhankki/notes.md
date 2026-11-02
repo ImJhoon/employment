@@ -160,6 +160,18 @@ GitHub 도구로 필요한 원격 파일과 PR #74 변경분을 열람했다. �
   - 요청 생성 단계에서 이미 요청자 본인에게 AI 키워드를 요구하므로, 후보 선정 단계의 같은 필터가 실제로 제외하는 경우는 생성 뒤 프로필이 바뀐 경우 등으로 좁을 수 있다. 영향 범위는 확인하지 않았다.
 - HTML은 같은 내용으로 맞췄고, 핵심 구현 카드가 두 개가 되어 `portfolio.css`에 `.metric-grid.two-up`을 추가했다. 브라우저 시각 확인은 하지 않았다.
 
+## 로고와 시스템 아키텍처 (2026-11-02)
+
+- 로고: 기준 커밋의 `frontend/public/assets/maju-hankki-wordmark-v2.png`(2020×778, 투명 배경)를 사용했다. 서비스 헤더(`frontend/index.html` L185)가 쓰는 워드마크다. GRAB 워드마크와 여백을 맞추려고 글자 영역(249,188)–(1771,568)에서 약 40px 여백을 남기고 1603×461로 잘라 `assets/majuhankki-wordmark.png`에 저장했다. 색과 형태는 바꾸지 않았다. 공개 본문 Markdown은 GRAB과 같이 텍스트 제목을 유지하고, HTML 머리글에만 로고를 넣었다.
+- 구성도: `assets/majuhankki-architecture.svg`(GRAB 구성도와 같은 1280×720 형식, Warm Table 색상)를 새로 그렸고, `architecture.html`에 같은 SVG를 인라인으로 넣었다. 그림을 고치면 두 파일을 함께 맞춘다. 설명과 근거 링크는 `architecture.md`에 있다.
+- 기준 커밋 `310120e`를 임시 디렉토리에 클론해 다음을 확인했다.
+  - 호스팅: Render·Cloudflare Pages·Supabase·Aiven은 README 배포 구성 표가 근거다. 저장소에 플랫폼 설정 파일과 `.github` 워크플로가 없어 배포 경로는 그리지 않았다. `application-prod.yml` 주석과 `Dockerfile`은 Render를 전제로 한다.
+  - 연결: `WebSocketConfig`(`/ws-chat`, SockJS, `enableSimpleBroker`), `OAuthAuthorizationCodeService`(교환 코드를 Valkey에 저장), `S3FileStore.putObject`(서버 경유 업로드), `KakaoRegionPinValidator`(`coord2regioncode`, 매칭 요청 생성 시 호출), `application-ai.yml`(제공자 기본값 `none`), `application-prod.yml`(Prometheus 노출 끔), `docker-compose.yml`(로컬 Redis·Prometheus·Grafana), `frontend/index.html`(Kakao Maps SDK, Tailwind·SockJS·STOMP CDN).
+  - `@Scheduled`: `MatchProposalExpirationScheduler`, `MatchProposalRetryScheduler`, `RealtimeMatchWaitingReconciliationService`, `RefreshTokenCleanupScheduler`.
+- 팀이 만든 구성도 `docs/assets/image/시스템아키텍쳐.jpg`가 저장소에 있다. 참고만 했고, 코드 기준으로 다시 그렸다. 팀 그림에는 저장소가 "Redis"로 표시되어 있으나 배포 구성은 Aiven for Valkey이고 Redis는 로컬 대체용이다.
+- 구성도는 팀 전체 서비스의 맥락이다. 구성 요소별 `git blame` 작성자를 일부 확인했지만(예: `S3FileStore`는 팀원), 구성도와 `architecture.md`에는 개인 기여를 표시하지 않았다.
+- 검증: 로컬 Edge 헤드리스로 SVG 단독(1280×720)과 `portfolio-short.html` 데스크톱 화면을 캡처해 로고·구성도 표시, 라벨 겹침이 없음을 확인했다. 390px 폭 캡처는 헤드리스 최소 창 폭 때문에 GRAB 페이지도 오른쪽이 잘려 판단에 쓰지 않았다. 실제 모바일 기기와 인쇄 결과는 확인하지 않았다.
+
 ## 확인이 필요한 항목
 
 - [x] 테스트 내용을 본문에 다시 넣을지 결정 → 2026-10-31 사례 ①에 다시 넣었다(실행은 Claude). 이전 메모: 다시 넣으려면 직접 재실행하고 시나리오를 검토한 뒤 실행자 항목과 AI 활용 서술을 정한다. (예: "테스트 코드는 AI로 작성하고, 시나리오 검토와 실제 DB 실행 검증은 직접 했습니다.") 그 전까지 사례 ①에는 검증 절이 없다.
