@@ -43,8 +43,8 @@
 
 <section id="token-rotation" class="document-section case-study" aria-labelledby="token-rotation-title"><header class="section-header"><p class="section-kicker">핵심 사례 01</p>
 <h2 id="token-rotation-title">동시 재발급과 토큰 탈취를 구분하는 Refresh Token Rotation</h2></header>
-<h3 class="block-label">문제</h3><p> 같은 브라우저의 두 탭이 동시에 재발급을 요청하면 유효한 토큰이 두 개가 될 수 있었습니다. 또 이미 교체된 토큰이 다시 오면 탈취를 의심해야 하지만, 경쟁에서 진 탭의 요청도 똑같은 모습으로 들어옵니다. 이를 모두 탈취로 보면 정상 사용자가 로그아웃됩니다.</p>
-<h3 class="block-label">해결</h3><ul class="detail-list"><li><strong class="item-label">원자적 교체:</strong> 옛 토큰 삭제, 새 토큰 저장, 사용 기록 저장을 Lua 스크립트 하나로 묶었습니다. <code>DEL</code>이 성공한 요청 하나만 교체하므로 분산 락 없이 두 토큰이 동시에 유효한 순간을 없앴습니다.</li><li><strong class="item-label">유예 시간 10초:</strong> 교체된 토큰이 10초 안에 오면 탭 경쟁으로 보고 요청만 거부합니다. 그 뒤에 오면 탈취로 보고 세션의 현재 토큰까지 같은 스크립트 안에서 폐기합니다. 시각은 Redis <code>TIME</code>으로 계산해 서버 간 시계 차이를 없앴습니다.</li><li><strong class="item-label">장애와 인증 실패 구분:</strong> Redis 오류는 401이 아니라 500으로 응답하고 쿠키를 지우지 않습니다. Redis 장애 한 번에 전체 사용자가 로그아웃되지 않게 하려는 선택입니다.</li></ul>
+<h3 class="block-label">문제</h3><p> 네트워크 지연으로 재발급 응답을 받기 전에 클라이언트가 재시도하면, 서버에서 처리 중인 첫 요청과 같은 Refresh Token을 사용하는 요청이 겹칠 수 있습니다. 이런 중복 요청에서도 토큰 교체는 한 번만 성공해야 합니다. 또한 첫 요청이 교체를 마친 뒤 재시도가 도착하면 이미 사용된 토큰의 재사용으로 보입니다. 이를 모두 탈취로 판단해 세션을 폐기하면 정상 사용자도 로그아웃될 수 있습니다.</p>
+<h3 class="block-label">해결</h3><ul class="detail-list"><li><strong class="item-label">원자적 교체:</strong> 옛 토큰 삭제, 새 토큰 저장, 사용 기록 저장을 Lua 스크립트 하나로 묶었습니다. <code>DEL</code>이 성공한 요청 하나만 교체하므로 분산 락 없이 같은 Refresh Token의 중복 교체를 막았습니다.</li><li><strong class="item-label">유예 시간 10초:</strong> 교체된 토큰이 10초 안에 오면 정상적인 중복 요청 가능성을 고려해 요청만 거부합니다. 그 뒤에 오면 탈취로 보고 세션의 현재 토큰까지 같은 스크립트 안에서 폐기합니다. 시각은 Redis <code>TIME</code>으로 계산해 서버 간 시계 차이를 없앴습니다.</li><li><strong class="item-label">장애와 인증 실패 구분:</strong> Redis 오류는 401이 아니라 500으로 응답하고 쿠키를 지우지 않습니다. Redis 장애 한 번에 전체 사용자가 로그아웃되지 않게 하려는 선택입니다.</li></ul>
 <aside class="outcome"><h3 class="block-label">결과</h3><p> 실제 Redis 통합 테스트에서 같은 토큰으로 동시 교체 20건 중 1건만 성공했고, 유예 시간 안팎의 재사용과 판정 직전에 끼어든 교체까지 검증했습니다.</p>
 </aside>
 <footer class="sources"><h3>근거 자료</h3><div class="source-links"><a href="https://github.com/prgrms-aibe-devcourse/AIBE7_FinalProject_Team3/blob/223b697783bbd712c68d359999f42ad141353802/Backend/src/main/java/org/example/grab/domain/auth/service/TokenRefreshService.java">TokenRefreshService</a><a href="https://github.com/prgrms-aibe-devcourse/AIBE7_FinalProject_Team3/blob/223b697783bbd712c68d359999f42ad141353802/Backend/src/main/resources/redis/refresh-token-rotate.lua">교체 Lua</a><a href="https://github.com/prgrms-aibe-devcourse/AIBE7_FinalProject_Team3/blob/223b697783bbd712c68d359999f42ad141353802/Backend/src/test/java/org/example/grab/domain/auth/repository/RefreshTokenRotationIntegrationTest.java">통합 테스트</a><a href="https://github.com/prgrms-aibe-devcourse/AIBE7_FinalProject_Team3/pull/101">PR #101</a></div></footer>
@@ -57,30 +57,11 @@
 <h3 class="block-label">해결</h3><p> 서버를 키우거나 Argon2 메모리를 낮추는(보안 기준 위반) 대신, <code>PasswordEncoder</code>를 감싸 <strong>해시를 동시에 4건까지만 실행</strong>하게 했습니다.</p>
 <ul class="detail-list"><li>처리량은 CPU가, 힙 사용은 동시 실행 수가 정합니다. 그래서 CPU 수 근처로 묶으면 처리량은 지키면서 힙 사용만 묶을 수 있다고 판단했습니다.</li><li>공정 세마포어로 먼저 온 요청부터 처리하고, 3초 안에 차례가 오지 않으면 503과 <code>Retry-After</code>로 거절합니다.</li><li>로그인, 더미 해시, 가입, 비밀번호 변경이 모두 같은 제한을 받으므로 거절 응답으로 가입 여부가 드러나지 않습니다.</li></ul>
 <h3 class="block-label">결과</h3><p class="result-context">(같은 환경·시나리오로 재측정)</p>
-<div tabindex="0" role="region" class="table-wrapper" aria-label="로그인 부하 테스트 전후 비교"><table><caption class="sr-only">로그인 부하 테스트 전후 비교</caption><thead><tr><th scope="col">지표</th><th scope="col">개선 전</th><th scope="col">개선 후</th></tr></thead><tbody><tr><td>일제히 80명 p95 응답시간</td><td>26.1초</td><td><strong>3.0초</strong></td></tr><tr><td>일제히 80명 실패 (2회 측정)</td><td>29·32건</td><td><strong>0·0건</strong></td></tr><tr><td>지속 VU 80 서버 오류 (2회 측정)</td><td>57·26건</td><td><strong>0·0건</strong></td></tr><tr><td>지속 VU 20·40 p95 (거절 없음)</td><td>1.39초 · 2.96초</td><td><strong>1.01초 · 2.02초</strong></td></tr><tr><td>지속 VU 40 Full GC 직후 힙</td><td>422MiB (최대 544)</td><td><strong>124MiB (최대 137)</strong></td></tr></tbody></table>
-</div><section class="p95-comparison" aria-labelledby="login-p95-title">
-<h3 id="login-p95-title" class="block-label">동시 사용자 수에 따른 로그인 p95 응답시간</h3>
-<p id="login-p95-context" class="result-context">지속 실행 30초 · micro·G1 환경 · 단위: 밀리초(ms)</p>
-<div class="table-wrapper" tabindex="0" role="region" aria-labelledby="login-p95-title" aria-describedby="login-p95-context login-p95-note">
-<table class="login-p95-table">
-<caption class="sr-only">동시 사용자 수에 따른 로그인 p95 응답시간 비교</caption>
-<thead><tr><th scope="col">동시 사용자 수 (VU)</th><th scope="col">개선 전<span class="column-note">제한 없음</span></th><th scope="col">개선 후<span class="column-note">동시 실행 상한 4</span></th></tr></thead>
-<tbody>
-<tr><th scope="row">1</th><td>45</td><td><strong>51</strong></td></tr>
-<tr><th scope="row">5</th><td>302</td><td><strong>299</strong></td></tr>
-<tr><th scope="row">10</th><td>628</td><td><strong>581</strong></td></tr>
-<tr><th scope="row">20</th><td>1,390</td><td><strong>1,012</strong></td></tr>
-<tr><th scope="row">40</th><td>2,960</td><td><strong>2,020</strong></td></tr>
-<tr class="peak-load"><th scope="row">80</th><td>23,626</td><td><strong>3,279</strong></td></tr>
-</tbody>
-</table>
-</div>
-<p id="login-p95-note" class="comparison-note">VU 80의 개선 후 p95에는 대기 한도 초과로 거절한 요청 98건(11.6%)이 포함됩니다.</p>
-</section>
-<ul class="detail-list"><li>거절이 없던 VU 20·40에서도 p95가 약 30% 줄었습니다. 동시 해시가 묶여 GC가 덜 돌았기 때문이며, 거절로만 얻은 숫자가 아닙니다.</li></ul>
-<aside class="reading-note"><h3 class="block-label">남은 과제</h3><p>일제히 80명은 대기 한도(3초) 경계에 있습니다.</p>
-<p>실패 로그인도 같은 줄을 차지하므로 로그인 시도 횟수 제한이 다음 과제입니다.</p>
-</aside>
+<div tabindex="0" role="region" class="table-wrapper" aria-label="동시 로그인 부하 테스트 전후 비교"><table><caption class="sr-only">동시 로그인 부하 테스트 전후 비교</caption><thead><tr><th scope="col">지표</th><th scope="col">개선 전</th><th scope="col">개선 후</th></tr></thead><tbody><tr><td>일제히 80명 p95 응답시간</td><td>26.1초</td><td><strong>3.0초</strong></td></tr><tr><td>일제히 80명 실패 (2회 측정)</td><td>29·32건</td><td><strong>0·0건</strong></td></tr></tbody></table></div>
+<h3 class="block-label">보조 검증: 반복 부하에서의 힙 사용</h3>
+<p>micro·G1 환경에서 로그인 요청을 30초간 반복한 결과도 비교했습니다. 실제 이용 패턴과는 구분하며, 해시 연산이 계속 유입될 때 메모리 압박을 확인하는 보조 검증입니다.</p>
+<p>VU 40 조건에서 Full GC 직후 힙은 <strong>422MiB에서 124MiB로</strong>, 관측 최댓값은 <strong>544MiB에서 137MiB로</strong> 줄었습니다. VU별 응답시간과 상세 측정 조건은 아래 개선 전·후 측정 자료에 정리했습니다.</p>
+<p>반복 부하 VU 80의 개선 후 측정에서는 대기 한도 초과로 98건(11.6%)을 거절했습니다. 동시 실행 제한은 과부하 시 일부 요청을 거절하는 비용이 있습니다.</p>
 <footer class="sources"><h3>근거 자료</h3><div class="source-links"><a href="https://github.com/prgrms-aibe-devcourse/AIBE7_FinalProject_Team3/blob/feat/GR-178-limit-argon2-concurrency/Backend/src/main/java/org/example/grab/global/security/password/ConcurrencyLimitedPasswordEncoder.java">ConcurrencyLimitedPasswordEncoder</a><a href="https://github.com/prgrms-aibe-devcourse/AIBE7_FinalProject_Team3/blob/feat/GR-178-limit-argon2-concurrency/Backend/k6/login-burst/result.md">개선 전 측정</a><a href="https://github.com/prgrms-aibe-devcourse/AIBE7_FinalProject_Team3/blob/feat/GR-178-limit-argon2-concurrency/Backend/k6/login-burst/result-gr178.md">개선 후 측정</a></div></footer>
 </section>
 
@@ -89,7 +70,7 @@
 <h3 class="block-label">문제</h3><p> JWT에는 외부 식별자인 publicId를 넣고, 서비스와 FK에는 내부 PK인 users.id를 사용합니다. 로그인 이후에도 인증 API가 내부 ID를 얻을 때마다 같은 회원을 DB에서 다시 조회했습니다. 이 반복 비용이 실제 병목인지 확인하기 위해 기준선을 먼저 측정했습니다.</p>
 <h3 class="block-label">원인</h3><p> 내 정보 조회는 ID 변환과 회원 정보 조회가 각각 별도 읽기 트랜잭션을 열었습니다. SELECT는 단순했지만 요청마다 커넥션을 두 번 빌렸고, ID 변환이 요청당 DB 왕복 약 4회 중 2회를 차지했습니다. 운영 DB와 비슷하도록 왕복 지연을 약 3ms로 설정한 환경에서는 VU 800부터 커넥션 풀이 포화되며 지연이 늘었습니다.</p>
 <h3 class="block-label">해결</h3><p>ID 매핑 캐시와 캐시 누락 경로 개선을 함께 적용했습니다.</p>
-<ul class="detail-list"><li><strong class="item-label">캐시 대상과 위치:</strong> 변경되지 않는 publicId → 내부 userId 매핑만 Caffeine 로컬 메모리에 저장했습니다. 적중하면 ID 변환을 위한 DB 접근이 사라집니다. 원격 캐시의 네트워크 왕복도 추가하지 않습니다.</li><li><strong class="item-label">만료와 용량:</strong> ID 대응이 바뀌지 않고 탈퇴 시 회원 행을 유지하는 정책을 전제로 TTL·무효화를 생략했습니다. 대신 최대 10만 항목으로 용량을 제한하고, 없는 회원은 저장하지 않습니다. Micrometer로 적중·누락·크기·축출을 관측합니다.</li><li><strong class="item-label">첫 요청 비용:</strong> ID 변환 서비스의 읽기 트랜잭션을 제거했습니다. 캐시가 비어도 자동 커밋 SELECT 한 문장으로 조회합니다. JWT에 내부 ID를 넣는 방법은 기존 Claim 계약과 충돌해 제외했습니다.</li><li><strong class="item-label">회원 상태 확인:</strong> 캐시는 ID 매핑만 보관합니다. 내 정보 조회는 계속 DB에서 회원 정보를 읽고 정지·탈퇴 상태를 확인합니다.</li></ul>
+<ul class="detail-list"><li><strong class="item-label">캐시 대상과 위치:</strong> 변경되지 않는 publicId → 내부 userId 매핑만 Caffeine 로컬 메모리에 저장했습니다. 적중하면 ID 변환을 위한 DB 접근이 사라집니다. 원격 캐시의 네트워크 왕복도 추가하지 않습니다.</li><li><strong class="item-label">만료와 용량:</strong> ID 대응이 바뀌지 않고 탈퇴 시 회원 행을 유지하는 정책을 전제로 TTL·무효화를 생략했습니다. 대신 최대 10만 항목으로 용량을 제한하고, 없는 회원은 저장하지 않습니다. Micrometer로 캐시 적중·누락·크기·자동 제거 횟수를 관측합니다.</li><li><strong class="item-label">첫 요청 비용:</strong> ID 변환 서비스의 읽기 트랜잭션을 제거했습니다. 캐시가 비어도 자동 커밋 SELECT 한 문장으로 조회합니다. JWT에 내부 ID를 넣는 방법은 기존 Claim 계약과 충돌해 제외했습니다.</li><li><strong class="item-label">회원 상태 확인:</strong> 캐시는 ID 매핑만 보관합니다. 내 정보 조회는 계속 DB에서 회원 정보를 읽고 정지·탈퇴 상태를 확인합니다.</li></ul>
 <h3 class="block-label">검증</h3><p> PostgreSQL 로그와 pg_stat_statements로 트랜잭션 경계·문장 수를 확인하고, netem 지연 전후 응답시간 차이로 DB 왕복 수를 추정했습니다. 캐시 적중 경로에서는 ID 변환 SELECT가 사라졌고, 누락 경로에서는 별도 BEGIN·COMMIT 없이 SELECT 한 문장만 실행됐습니다.</p>
 <h3 class="block-label">결과</h3><p class="result-context">(GET /api/v1/users/me, 같은 날 전후 교대 측정)</p>
 <div tabindex="0" role="region" class="table-wrapper" aria-label="회원 ID 변환 개선 전후 비교"><table><caption class="sr-only">회원 ID 변환 개선 전후 비교</caption><thead><tr><th scope="col">지표</th><th scope="col">개선 전</th><th scope="col">개선 후</th></tr></thead><tbody><tr><td>요청당 추정 DB 왕복 · 트랜잭션</td><td>4.07회 · 약 2개</td><td><strong>2.01회 · 약 1개</strong></td></tr><tr><td>VU 25 응답시간 중앙값</td><td>18.4~18.7ms</td><td><strong>12.0~12.3ms</strong></td></tr><tr><td>VU 800 응답시간 p95</td><td>126.2~141.4ms</td><td><strong>14.1~16.7ms</strong></td></tr><tr><td>VU 800 커넥션 획득 평균 시간</td><td>24.78~27.82ms</td><td><strong>0.57~0.84ms</strong></td></tr><tr><td>VU 1600 처리량</td><td>763.8~769.1건/초</td><td><strong>1,490.3~1,504.1건/초 (약 1.95배)</strong></td></tr></tbody></table>
@@ -101,7 +82,7 @@
 </aside>
 <ul class="detail-list"><li><strong class="item-label">해석:</strong> 반복 ID 조회를 제거해 커넥션 점유와 대기를 줄였습니다. 낮은 부하에서 줄어든 중앙값 약 6.4ms도 제거한 DB 왕복 약 2회와 맞았습니다. 위 성과는 캐시 도입과 조회 트랜잭션 제거를 함께 적용한 결과입니다.</li></ul>
 <aside class="reading-note"><h3 class="block-label">남은 과제</h3><p>약 1,500건/초는 이번 범위의 최고 측정 처리량이며, 개선 후 처리량 한계는 더 높은 부하에서 확인해야 합니다.</p>
-<p>캐시는 인스턴스마다 따로 채워지므로 재기동·첫 요청·축출 이후의 효과는 접속 패턴에 따라 달라집니다.</p>
+<p>캐시는 인스턴스마다 따로 채워지므로 재기동·첫 요청·캐시 항목 자동 제거 이후의 효과는 접속 패턴에 따라 달라집니다.</p>
 <p>같은 키의 동시 누락은 하나로 합치지 않아 중복 DB 조회가 가능하며, 회원 행 삭제나 ID 변경 정책을 도입하면 무효화 정책도 재검토해야 합니다.</p>
 </aside>
 <footer class="sources"><h3>근거 자료</h3><div class="source-links"><a href="https://github.com/prgrms-aibe-devcourse/AIBE7_FinalProject_Team3/blob/7c2e51b84c45d4d31eea2e7549907d40416fc323/Backend/src/main/java/org/example/grab/domain/user/service/UserIdLookupService.java">UserIdLookupService</a><a href="https://github.com/prgrms-aibe-devcourse/AIBE7_FinalProject_Team3/blob/7c2e51b84c45d4d31eea2e7549907d40416fc323/Backend/src/main/java/org/example/grab/domain/user/support/UserIdCacheConfig.java">캐시 설정</a><a href="https://github.com/prgrms-aibe-devcourse/AIBE7_FinalProject_Team3/blob/7c2e51b84c45d4d31eea2e7549907d40416fc323/Backend/src/test/java/org/example/grab/domain/user/service/UserIdLookupServiceTest.java">캐시 테스트</a><a href="https://github.com/prgrms-aibe-devcourse/AIBE7_FinalProject_Team3/blob/7c2e51b84c45d4d31eea2e7549907d40416fc323/Backend/k6/user-id-lookup/result.md">측정 결과·재현 절차</a><a href="https://github.com/prgrms-aibe-devcourse/AIBE7_FinalProject_Team3/pull/223">기준선 PR #223</a><a href="https://github.com/prgrms-aibe-devcourse/AIBE7_FinalProject_Team3/pull/226">개선 PR #226</a></div></footer>

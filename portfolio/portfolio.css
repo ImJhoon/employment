@@ -100,7 +100,7 @@ figure { margin: 28px 0; }
 figure img { display: block; width: 100%; height: auto; }
 figcaption { margin-top: 12px; color: var(--muted); font-size: 12px; line-height: 1.8; }
 .architecture-figure { width: 100%; max-width: 820px; margin: 16px 0 0; }
-.architecture-preview { display: block; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); cursor: zoom-in; }
+.architecture-preview { display: block; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
 .architecture-preview img { border-radius: 8px; }
 .reading-note { margin-block: 24px; padding: 20px 24px; border-radius: 8px; background: var(--surface); font-size: 14px; line-height: 1.9; }
 .reading-note .block-label { margin-top: 0; margin-bottom: 8px; font-size: 14px; }

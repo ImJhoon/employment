@@ -25,9 +25,7 @@
 
 #### 시스템 아키텍처
 
-[![GRAB 시스템 아키텍처 — React, Nginx, Spring Boot와 내부 Caffeine 캐시, 공유 저장소 및 외부 연동 구성](assets/grab-architecture.svg)](architecture/grab.html)
-
-팀 전체 서비스 구성입니다. 코드·배포 설정 기준이며 실제 운영 현황을 뜻하지 않습니다. 그림을 누르면 원본 크기로 볼 수 있습니다. [설계 설명·근거](architecture/grab.md)
+![GRAB 시스템 아키텍처 — React, Nginx, Spring Boot와 내부 Caffeine 캐시, 공유 저장소 및 외부 연동 구성](assets/grab-architecture.svg)
 
 **핵심 성과**
 
@@ -46,12 +44,12 @@
 
 ### 3\. 핵심 사례 ① 동시 재발급과 토큰 탈취를 구분하는 Refresh Token Rotation
 
-**문제:** 같은 브라우저의 두 탭이 동시에 재발급을 요청하면 유효한 토큰이 두 개가 될 수 있었습니다. 또 이미 교체된 토큰이 다시 오면 탈취를 의심해야 하지만, 경쟁에서 진 탭의 요청도 똑같은 모습으로 들어옵니다. 이를 모두 탈취로 보면 정상 사용자가 로그아웃됩니다.
+**문제:** 네트워크 지연으로 재발급 응답을 받기 전에 클라이언트가 재시도하면, 서버에서 처리 중인 첫 요청과 같은 Refresh Token을 사용하는 요청이 겹칠 수 있습니다. 이런 중복 요청에서도 토큰 교체는 한 번만 성공해야 합니다. 또한 첫 요청이 교체를 마친 뒤 재시도가 도착하면 이미 사용된 토큰의 재사용으로 보입니다. 이를 모두 탈취로 판단해 세션을 폐기하면 정상 사용자도 로그아웃될 수 있습니다.
 
 **해결:**
 
-- **원자적 교체:** 옛 토큰 삭제, 새 토큰 저장, 사용 기록 저장을 Lua 스크립트 하나로 묶었습니다. `DEL`이 성공한 요청 하나만 교체하므로 분산 락 없이 두 토큰이 동시에 유효한 순간을 없앴습니다.  
-- **유예 시간 10초:** 교체된 토큰이 10초 안에 오면 탭 경쟁으로 보고 요청만 거부합니다. 그 뒤에 오면 탈취로 보고 세션의 현재 토큰까지 같은 스크립트 안에서 폐기합니다. 시각은 Redis `TIME`으로 계산해 서버 간 시계 차이를 없앴습니다.  
+- **원자적 교체:** 옛 토큰 삭제, 새 토큰 저장, 사용 기록 저장을 Lua 스크립트 하나로 묶었습니다. `DEL`이 성공한 요청 하나만 교체하므로 분산 락 없이 같은 Refresh Token의 중복 교체를 막았습니다.
+- **유예 시간 10초:** 교체된 토큰이 10초 안에 오면 정상적인 중복 요청 가능성을 고려해 요청만 거부합니다. 그 뒤에 오면 탈취로 보고 세션의 현재 토큰까지 같은 스크립트 안에서 폐기합니다. 시각은 Redis `TIME`으로 계산해 서버 간 시계 차이를 없앴습니다.
 - **장애와 인증 실패 구분:** Redis 오류는 401이 아니라 500으로 응답하고 쿠키를 지우지 않습니다. Redis 장애 한 번에 전체 사용자가 로그아웃되지 않게 하려는 선택입니다.
 
 **결과:** 실제 Redis 통합 테스트에서 같은 토큰으로 동시 교체 20건 중 1건만 성공했고, 유예 시간 안팎의 재사용과 판정 직전에 끼어든 교체까지 검증했습니다.
@@ -82,27 +80,14 @@
 | :---- | :---- | :---- |
 | 일제히 80명 p95 응답시간 | 26.1초 | **3.0초** |
 | 일제히 80명 실패 (2회 측정) | 29·32건 | **0·0건** |
-| 지속 VU 80 서버 오류 (2회 측정) | 57·26건 | **0·0건** |
-| 지속 VU 20·40 p95 (거절 없음) | 1.39초 · 2.96초 | **1.01초 · 2.02초** |
-| 지속 VU 40 Full GC 직후 힙 | 422MiB (최대 544\) | **124MiB (최대 137\)** |
 
-**동시 사용자 수에 따른 로그인 p95 응답시간**
+**보조 검증: 반복 부하에서의 힙 사용**
 
-지속 실행 30초 · micro·G1 환경 · 단위: 밀리초(ms)
+micro·G1 환경에서 로그인 요청을 30초간 반복한 결과도 비교했습니다. 실제 이용 패턴과는 구분하며, 해시 연산이 계속 유입될 때 메모리 압박을 확인하는 보조 검증입니다.
 
-| 동시 사용자 수 (VU) | 개선 전 · 제한 없음 | 개선 후 · 동시 실행 상한 4 |
-| ---: | ---: | ---: |
-| 1 | 45 | **51** |
-| 5 | 302 | **299** |
-| 10 | 628 | **581** |
-| 20 | 1,390 | **1,012** |
-| 40 | 2,960 | **2,020** |
-| 80 | 23,626 | **3,279** |
+VU 40 조건에서 Full GC 직후 힙은 **422MiB에서 124MiB로**, 관측 최댓값은 **544MiB에서 137MiB로** 줄었습니다. VU별 응답시간과 상세 측정 조건은 아래 개선 전·후 측정 자료에 정리했습니다.
 
-VU 80의 개선 후 p95에는 대기 한도 초과로 거절한 요청 98건(11.6%)이 포함됩니다.
-
-- 거절이 없던 VU 20·40에서도 p95가 약 30% 줄었습니다. 동시 해시가 묶여 GC가 덜 돌았기 때문이며, 거절로만 얻은 숫자가 아닙니다.  
-- **남은 과제:** 일제히 80명은 대기 한도(3초) 경계에 있습니다. 실패 로그인도 같은 줄을 차지하므로 로그인 시도 횟수 제한이 다음 과제입니다.
+반복 부하 VU 80의 개선 후 측정에서는 대기 한도 초과로 98건(11.6%)을 거절했습니다. 동시 실행 제한은 과부하 시 일부 요청을 거절하는 비용이 있습니다.
 
 근거: [ConcurrencyLimitedPasswordEncoder](https://github.com/prgrms-aibe-devcourse/AIBE7_FinalProject_Team3/blob/feat/GR-178-limit-argon2-concurrency/Backend/src/main/java/org/example/grab/global/security/password/ConcurrencyLimitedPasswordEncoder.java), [개선 전 측정](https://github.com/prgrms-aibe-devcourse/AIBE7_FinalProject_Team3/blob/feat/GR-178-limit-argon2-concurrency/Backend/k6/login-burst/result.md), [개선 후 측정](https://github.com/prgrms-aibe-devcourse/AIBE7_FinalProject_Team3/blob/feat/GR-178-limit-argon2-concurrency/Backend/k6/login-burst/result-gr178.md)
 
@@ -117,7 +102,7 @@ VU 80의 개선 후 p95에는 대기 한도 초과로 거절한 요청 98건(11.
 **해결: ID 매핑 캐시와 캐시 누락 경로 개선을 함께 적용했습니다.**
 
 - **캐시 대상과 위치:** 변경되지 않는 publicId → 내부 userId 매핑만 Caffeine 로컬 메모리에 저장했습니다. 적중하면 ID 변환을 위한 DB 접근이 사라집니다. 원격 캐시의 네트워크 왕복도 추가하지 않습니다.
-- **만료와 용량:** ID 대응이 바뀌지 않고 탈퇴 시 회원 행을 유지하는 정책을 전제로 TTL·무효화를 생략했습니다. 대신 최대 10만 항목으로 용량을 제한하고, 없는 회원은 저장하지 않습니다. Micrometer로 적중·누락·크기·축출을 관측합니다.
+- **만료와 용량:** ID 대응이 바뀌지 않고 탈퇴 시 회원 행을 유지하는 정책을 전제로 TTL·무효화를 생략했습니다. 대신 최대 10만 항목으로 용량을 제한하고, 없는 회원은 저장하지 않습니다. Micrometer로 캐시 적중·누락·크기·자동 제거 횟수를 관측합니다.
 - **첫 요청 비용:** ID 변환 서비스의 읽기 트랜잭션을 제거했습니다. 캐시가 비어도 자동 커밋 SELECT 한 문장으로 조회합니다. JWT에 내부 ID를 넣는 방법은 기존 Claim 계약과 충돌해 제외했습니다.
 - **회원 상태 확인:** 캐시는 ID 매핑만 보관합니다. 내 정보 조회는 계속 DB에서 회원 정보를 읽고 정지·탈퇴 상태를 확인합니다.
 
@@ -136,7 +121,7 @@ VU 80의 개선 후 p95에는 대기 한도 초과로 거절한 요청 98건(11.
 - **측정 조건:** 로컬 Docker에서 백엔드 2 CPU·1GiB(힙 550MiB), DB 1 CPU·512MiB, HikariCP 10개로 제한하고 netem 3ms를 적용했습니다. 계정 800개로 개선 전 → 후 → 전 → 후를 교대 측정했습니다. VU 25~1600을 단계당 60초 실행하며 요청 후 1초 쉬는 모델입니다. VU 800 초과 단계에서는 계정을 공유합니다.
 - 표의 응답시간·처리량·획득 시간은 각 조건 2회 측정 범위입니다. 요청당 왕복·트랜잭션 수는 별도로 예열한 캐시 적중 경로의 값입니다. 개선 후 교대 측정의 캐시 누락 비율은 0.32%였고, 네 실행 모두 요청 실패·401·커넥션 타임아웃은 0건이었습니다.
 - **해석:** 반복 ID 조회를 제거해 커넥션 점유와 대기를 줄였습니다. 낮은 부하에서 줄어든 중앙값 약 6.4ms도 제거한 DB 왕복 약 2회와 맞았습니다. 위 성과는 캐시 도입과 조회 트랜잭션 제거를 함께 적용한 결과입니다.
-- **남은 과제:** 약 1,500건/초는 이번 범위의 최고 측정 처리량이며, 개선 후 처리량 한계는 더 높은 부하에서 확인해야 합니다. 캐시는 인스턴스마다 따로 채워지므로 재기동·첫 요청·축출 이후의 효과는 접속 패턴에 따라 달라집니다. 같은 키의 동시 누락은 하나로 합치지 않아 중복 DB 조회가 가능하며, 회원 행 삭제나 ID 변경 정책을 도입하면 무효화 정책도 재검토해야 합니다.
+- **남은 과제:** 약 1,500건/초는 이번 범위의 최고 측정 처리량이며, 개선 후 처리량 한계는 더 높은 부하에서 확인해야 합니다. 캐시는 인스턴스마다 따로 채워지므로 재기동·첫 요청·캐시 항목 자동 제거 이후의 효과는 접속 패턴에 따라 달라집니다. 같은 키의 동시 누락은 하나로 합치지 않아 중복 DB 조회가 가능하며, 회원 행 삭제나 ID 변경 정책을 도입하면 무효화 정책도 재검토해야 합니다.
 
 근거: [UserIdLookupService](https://github.com/prgrms-aibe-devcourse/AIBE7_FinalProject_Team3/blob/7c2e51b84c45d4d31eea2e7549907d40416fc323/Backend/src/main/java/org/example/grab/domain/user/service/UserIdLookupService.java), [캐시 설정](https://github.com/prgrms-aibe-devcourse/AIBE7_FinalProject_Team3/blob/7c2e51b84c45d4d31eea2e7549907d40416fc323/Backend/src/main/java/org/example/grab/domain/user/support/UserIdCacheConfig.java), [캐시 테스트](https://github.com/prgrms-aibe-devcourse/AIBE7_FinalProject_Team3/blob/7c2e51b84c45d4d31eea2e7549907d40416fc323/Backend/src/test/java/org/example/grab/domain/user/service/UserIdLookupServiceTest.java), [측정 결과·재현 절차](https://github.com/prgrms-aibe-devcourse/AIBE7_FinalProject_Team3/blob/7c2e51b84c45d4d31eea2e7549907d40416fc323/Backend/k6/user-id-lookup/result.md), [기준선 PR #223](https://github.com/prgrms-aibe-devcourse/AIBE7_FinalProject_Team3/pull/223), [개선 PR #226](https://github.com/prgrms-aibe-devcourse/AIBE7_FinalProject_Team3/pull/226)
 
@@ -170,9 +155,7 @@ VU 80의 개선 후 p95에는 대기 한도 초과로 거절한 요청 98건(11.
 
 #### 시스템 아키텍처
 
-[![마주한끼 시스템 아키텍처 — 브라우저, Render의 Spring Boot와 내부 STOMP 브로커·스케줄러, 저장소 및 외부 연동 구성](assets/majuhankki-architecture.svg)](architecture/majuhankki.html)
-
-팀 전체 서비스 구성입니다. 코드·설정 기준이며 실제 운영 현황을 뜻하지 않습니다. 그림을 누르면 원본 크기로 볼 수 있습니다. [설계 설명·근거](architecture/majuhankki.md)
+![마주한끼 시스템 아키텍처 — 브라우저, Render의 Spring Boot와 내부 STOMP 브로커·스케줄러, 저장소 및 외부 연동 구성](assets/majuhankki-architecture.svg)
 
 **핵심 구현**
 

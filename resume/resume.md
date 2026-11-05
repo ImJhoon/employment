@@ -7,6 +7,7 @@
 **Contact**
 
 - E-mail: [jhjh9907@gmail.com](mailto:jhjh9907@gmail.com)
+- 연락처: 010-8482-0454
 - GitHub: [github.com/ImJhoon](https://github.com/ImJhoon)
 - Blog: [velog.io/@imjhoon](https://velog.io/@imjhoon/posts)
 
