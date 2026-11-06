@@ -1,0 +1,55 @@
+﻿JAVA_VERSION=17.0.12+8-LTS-286
+JAVA_VENDOR=Oracle Corporation
+OS=Windows 11 amd64
+PROCESSORS=2
+EXECUTOR=project-default-common-pool
+ENTRIES=100000
+CACHE_CLASS=com.github.benmanes.caffeine.cache.BoundedLocalCache$BoundedLocalManualCache
+MaxHeapSize=576716800
+UseG1GC=true
+UseCompressedOops=true
+UseCompressedClassPointers=true
+ObjectAlignmentInBytes=8
+ActiveProcessorCount=2
+# VM mode: 64 bits
+# Compressed references (oops): 0-bit shift
+# Compressed class pointers: 0-bit shift and 0x27F2C000000 base
+# Object alignment: 8 bytes
+#                       ref, bool, byte, char, shrt,  int,  flt,  lng,  dbl
+# Field sizes:            4,    1,    1,    2,    2,    4,    4,    8,    8
+# Array element sizes:    4,    1,    1,    2,    2,    4,    4,    8,    8
+# Array base offsets:    16,   16,   16,   16,   16,   16,   16,   16,   16
+
+REACHABLE_BYTES=14366720
+REACHABLE_MIB=13.701172
+CACHE_GRAPH_BYTES=14099832
+CACHE_GRAPH_MIB=13.446648
+PERCENT_OF_550_MIB=2.444845
+ footprint:
+     COUNT       AVG       SUM   DESCRIPTION
+         1        24        24   [B
+         1   1048592   1048592   [J
+         1      1048      1048   [Ljava.lang.Object;
+         1   1048592   1048592   [Ljava.util.concurrent.ConcurrentHashMap$Node;
+         3        24        72   com.github.benmanes.caffeine.cache.AccessOrderDeque
+         1        24        24   com.github.benmanes.caffeine.cache.BoundedBuffer
+         1        16        16   com.github.benmanes.caffeine.cache.BoundedLocalCache$$Lambda$25/0x0000027f2d00b1d8
+         1        24        24   com.github.benmanes.caffeine.cache.BoundedLocalCache$BoundedLocalManualCache
+         1        24        24   com.github.benmanes.caffeine.cache.BoundedLocalCache$PerformCleanupTask
+         1        32        32   com.github.benmanes.caffeine.cache.FrequencySketch
+         1       552       552   com.github.benmanes.caffeine.cache.MpscGrowableArrayQueue
+    100001        32   3200032   com.github.benmanes.caffeine.cache.PSMS
+         1       312       312   com.github.benmanes.caffeine.cache.SSSMS
+         1        24        24   com.github.benmanes.caffeine.cache.SingletonWeigher
+         1        40        40   com.github.benmanes.caffeine.cache.stats.ConcurrentStatsCounter
+    100000        24   2400000   java.lang.Long
+         1        24        24   java.lang.String
+         1        32        32   java.lang.ref.WeakReference
+    100000        32   3200000   java.util.UUID
+         1        64        64   java.util.concurrent.ConcurrentHashMap
+    100000        32   3200000   java.util.concurrent.ConcurrentHashMap$Node
+         7        32       224   java.util.concurrent.atomic.LongAdder
+         1        32        32   java.util.concurrent.locks.AbstractQueuedSynchronizer$ExclusiveNode
+         1        16        16   java.util.concurrent.locks.ReentrantLock
+         1        32        32   java.util.concurrent.locks.ReentrantLock$NonfairSync
+    400030            14099832   (total)

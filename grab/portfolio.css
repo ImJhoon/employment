@@ -45,7 +45,7 @@ code { padding: 2px 6px; border-radius: 4px; background: var(--surface); color: 
 
 .highlights { margin-top: 36px; }
 .summary-heading { margin-bottom: 14px; font-size: 13px; font-weight: 600; color: var(--muted); letter-spacing: 0.03em; }
-.metric-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.metric-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 .metric-card { display: flex; flex-direction: column; min-width: 0; padding: 23px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
 .metric-card h3 { font-size: 14px; font-weight: 600; }
 .metric { align-self: flex-start; margin-block: 15px 10px; border-bottom: 4px solid var(--brand); color: var(--accent); font-size: 35px; font-weight: 750; letter-spacing: -0.045em; line-height: 1.25; white-space: nowrap; font-variant-numeric: tabular-nums; }
@@ -167,7 +167,7 @@ figcaption { margin-top: 12px; color: var(--muted); font-size: 12px; line-height
   .project-logo { width: 160px; }
   .hero .lead { font-size: 11pt; margin-top: 14px; }
   .highlights { margin-top: 22px; }
-  .metric-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; }
+  .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
   .metric-card { padding: 13px; background: #fff; break-inside: avoid; }
   .metric-card h3 { font-size: 9pt; }
   .metric { font-size: 22pt; margin-block: 10px; }
@@ -193,4 +193,48 @@ figcaption { margin-top: 12px; color: var(--muted); font-size: 12px; line-height
   a { color: inherit; }
   .source-links a { font-size: 8pt; }
   .page-footer { margin-top: 30px; padding-bottom: 0; }
+}
+
+/* GRAB 결과 비교: 수치는 HTML 텍스트, 막대와 측정 범위는 CSS로 표시한다. */
+.result-charts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-block: 20px 12px; }
+.result-chart { --bar-color: #6c7166; min-width: 0; margin: 0; padding: 22px; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+.result-chart--featured { grid-column: 1 / -1; background: var(--accent-surface); }
+.result-chart-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin: 0 0 22px; color: var(--ink); }
+.result-chart-heading > span:first-child { min-width: 0; }
+.result-chart-heading strong { display: block; font-size: 15px; line-height: 1.55; }
+.result-chart-context { display: block; margin-top: 5px; color: var(--muted); font-size: 11px; line-height: 1.6; }
+.result-direction { flex-shrink: 0; padding-top: 2px; color: var(--accent); font-size: 10px; font-weight: 600; white-space: nowrap; }
+.result-row + .result-row { margin-top: 16px; }
+.result-row--after { --bar-color: var(--accent); }
+.result-row-label { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 10px; margin-bottom: 7px; font-size: 12px; line-height: 1.6; }
+.result-row-label > span { color: var(--muted); }
+.result-row-label strong { color: var(--bar-color); font-size: 13px; font-variant-numeric: tabular-nums; }
+.result-track { position: relative; height: 16px; border-left: 1px solid var(--muted); border-right: 1px solid var(--line); background: repeating-linear-gradient(to right, transparent 0, transparent calc(100% / var(--grid-steps) - 1px), var(--line-subtle) calc(100% / var(--grid-steps) - 1px), var(--line-subtle) calc(100% / var(--grid-steps))); }
+.result-bar, .result-range { position: absolute; top: 2px; height: 12px; box-sizing: border-box; }
+.result-bar { left: 0; width: var(--bar-start); background: var(--bar-color); }
+.result-row--after .result-bar { background: var(--brand); border-block: 1px solid var(--accent); }
+.result-range { left: var(--bar-start); width: var(--bar-range); border-block: 1px solid var(--bar-color); background: repeating-linear-gradient(135deg, var(--bar-color) 0 1px, #fff 1px 4px); }
+.result-end { position: absolute; left: var(--bar-end); top: 1px; height: 14px; border-left: 1px solid var(--bar-color); transform: translateX(-1px); }
+.result-bar--zero { width: 0; border-left: 2px solid var(--bar-color); background: none; }
+.result-row--after .result-bar--zero { border-block: 0; background: none; }
+.result-axis { position: relative; height: 15px; margin-top: 8px; color: var(--muted); font-size: 10px; font-variant-numeric: tabular-nums; line-height: 1.5; }
+.result-axis span { position: absolute; left: var(--tick); transform: translateX(-50%); white-space: nowrap; }
+.result-axis span:first-child { transform: none; }
+.result-axis span:last-child { transform: translateX(-100%); }
+.result-chart-footnote { margin: 14px 0 0; color: var(--muted); font-size: 11px; line-height: 1.7; }
+.result-chart-note { margin: 0 0 24px; color: var(--muted); font-size: 12px; line-height: 1.8; }
+@media (max-width: 680px) {
+  .result-charts { grid-template-columns: 1fr; gap: 12px; }
+  .result-chart { padding: 18px; }
+  .result-chart-heading { margin-bottom: 18px; }
+}
+@media print {
+  .result-charts { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
+  .result-chart { padding: 13px; break-inside: avoid; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .result-chart-heading { margin-bottom: 14px; }
+  .result-chart-heading strong { font-size: 9pt; }
+  .result-chart-context, .result-direction, .result-axis { font-size: 7pt; }
+  .result-row-label { font-size: 8pt; }
+  .result-row-label strong { font-size: 8pt; }
+  .result-chart-footnote, .result-chart-note { font-size: 7pt; }
 }

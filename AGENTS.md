@@ -18,19 +18,20 @@
 
 ## 2. 기존 자료와 작업 범위
 
-- `grab/portfolio-short.md`: 현재 GRAB 포트폴리오 본문과 편집 기준
-- `grab/portfolio-short.html`, `grab/portfolio.css`: GRAB 포트폴리오의 웹 표시 문서와 스타일. 본문을 수정하면 Markdown과 HTML의 내용을 함께 맞춘다.
-- `grab/architecture.md`, `grab/architecture.html`: GRAB 시스템 아키텍처 설명·근거와 구성도
-- `grab/interview-study-guide.md`: GRAB 기술 면접 대비 자료
-- `grab/assets/`: GRAB 로고와 포트폴리오에 삽입하는 이미지
-- `majuhankki/`: 마주한끼 포트폴리오와 관련 자료를 작성할 디렉토리
+- `portfolio/portfolio.md`: 현재 작업 대상인 통합 포트폴리오 본문
+- `portfolio/index.html`, `portfolio/portfolio.css`: 통합 포트폴리오의 웹 표시 문서와 스타일
+- `portfolio/assets/`, `portfolio/architecture/`: 통합본에서 사용하는 이미지와 프로젝트별 아키텍처 설명·구성도
+- `grab/portfolio-short.md`, `grab/portfolio-short.html`, `grab/portfolio.css`, `majuhankki/portfolio-short.md`, `majuhankki/portfolio-short.html`, `majuhankki/portfolio.css`: 이전 개별 포트폴리오. 참고용으로 보존하며 기본 수정 대상에서 제외한다.
+- `grab/`, `majuhankki/`의 면접 대비 자료·검토 기록·작성 메모·기존 아키텍처 자료: 프로젝트별 근거 확인과 조사에 참고하는 자료
 - `resume/resume.md`: 이력서 초안
 - `AGENTS.md`: 모든 AI 에이전트가 공유하는 작성·검증 원칙
 - `CLAUDE.md`: 이 문서를 참조하는 Claude 진입 문서
 
-작업 전 현재 포트폴리오와 관련 자료, 하위 디렉토리의 지침을 읽고, 기존 작성 의도와 사용자가 확정한 내용을 파악한다. 검토 의견이나 보완 목록이 있다면 개선 후보로 다루며, 체크 여부만으로 현재 본문이나 실제 구현 상태를 단정하지 않는다. 본문과 근거를 대조해 반영 여부를 판단한다.
+**포트폴리오 수정은 통합본(`portfolio/`)에서만 진행한다.** GRAB과 마주한끼의 본문·레이아웃·스타일·그래프·이미지·아키텍처를 수정할 때도 통합본의 파일을 사용한다. 사용자가 개별본 수정을 명시적으로 요청하지 않는 한 `grab/`, `majuhankki/`의 개별 포트폴리오와 표시용 파일을 수정하거나 통합본의 변경을 동기화하지 않는다. 통합본을 수정하면 `portfolio/portfolio.md`와 `portfolio/index.html`의 서술·수치·근거를 함께 맞추되, 표와 HTML 그래프 등 표현 형식은 매체에 맞게 달리할 수 있다.
 
-새 파일은 필요한 경우에만 만든다. 프로젝트별 포트폴리오와 관련 자료는 루트 바로 아래의 `grab/`, `majuhankki/`에 각각 두고, 증빙·작성 메모·이미지가 늘어나면 해당 프로젝트 안에서 목적이 드러나는 하위 폴더로 정리한다. 이력서는 `resume/`에서 관리한다. 별도 요청 없이 기존 초안을 전면 교체하거나 프로젝트별 파일 구조를 크게 바꾸지 않는다.
+작업 전 현재 통합 포트폴리오와 관련 자료, 하위 디렉토리의 지침을 읽고, 기존 작성 의도와 사용자가 확정한 내용을 파악한다. 검토 의견이나 보완 목록이 있다면 개선 후보로 다루며, 체크 여부만으로 현재 본문이나 실제 구현 상태를 단정하지 않는다. 본문과 근거를 대조해 반영 여부를 판단한다.
+
+새 파일은 필요한 경우에만 만든다. 통합 포트폴리오와 표시용 자료는 `portfolio/`에서 관리한다. 프로젝트별 증빙·작성 메모·면접 대비 자료는 `grab/`, `majuhankki/`에 각각 두고, 자료가 늘어나면 해당 프로젝트 안에서 목적이 드러나는 하위 폴더로 정리한다. 이력서는 `resume/`에서 관리한다. 별도 요청 없이 기존 초안을 전면 교체하거나 프로젝트별 파일 구조를 크게 바꾸지 않는다.
 
 ## 3. 사실과 근거
 

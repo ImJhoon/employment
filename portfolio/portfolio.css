@@ -244,3 +244,92 @@ figcaption { margin-top: 12px; color: var(--muted); font-size: 12px; line-height
   .baseline-note { font-size: 8pt; }
   .tech-list { gap: 2px 10px; }
 }
+
+/* GRAB 결과 비교: 수치는 HTML 텍스트, 막대와 측정 범위는 CSS로 표시한다. */
+.result-charts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-block: 20px 12px; }
+.result-chart { --bar-color: #6c7166; min-width: 0; margin: 0; padding: 22px; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+.result-chart--featured { grid-column: 1 / -1; background: var(--accent-surface); }
+.result-chart-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin: 0 0 22px; color: var(--ink); }
+.result-chart-heading > span:first-child { min-width: 0; }
+.result-chart-heading strong { display: block; font-size: 15px; line-height: 1.55; }
+.result-chart-context { display: block; margin-top: 5px; color: var(--muted); font-size: 11px; line-height: 1.6; }
+.result-direction { flex-shrink: 0; padding-top: 2px; color: var(--accent); font-size: 10px; font-weight: 600; white-space: nowrap; }
+.result-row + .result-row { margin-top: 16px; }
+.result-row--after { --bar-color: var(--accent); }
+.result-row-label { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 10px; margin-bottom: 7px; font-size: 12px; line-height: 1.6; }
+.result-row-label > span { color: var(--muted); }
+.result-row-label strong { color: var(--bar-color); font-size: 13px; font-variant-numeric: tabular-nums; }
+.result-track { position: relative; height: 16px; border-left: 1px solid var(--muted); border-right: 1px solid var(--line); background: repeating-linear-gradient(to right, transparent 0, transparent calc(100% / var(--grid-steps) - 1px), var(--line-subtle) calc(100% / var(--grid-steps) - 1px), var(--line-subtle) calc(100% / var(--grid-steps))); }
+.result-bar, .result-range { position: absolute; top: 2px; height: 12px; box-sizing: border-box; }
+.result-bar { left: 0; width: var(--bar-start); background: var(--bar-color); }
+.result-row--after .result-bar { background: var(--brand); border-block: 1px solid var(--accent); }
+.result-range { left: var(--bar-start); width: var(--bar-range); border-block: 1px solid var(--bar-color); background: repeating-linear-gradient(135deg, var(--bar-color) 0 1px, #fff 1px 4px); }
+.result-end { position: absolute; left: var(--bar-end); top: 1px; height: 14px; border-left: 1px solid var(--bar-color); transform: translateX(-1px); }
+.result-bar--zero { width: 0; border-left: 2px solid var(--bar-color); background: none; }
+.result-row--after .result-bar--zero { border-block: 0; background: none; }
+.result-axis { position: relative; height: 15px; margin-top: 8px; color: var(--muted); font-size: 10px; font-variant-numeric: tabular-nums; line-height: 1.5; }
+.result-axis span { position: absolute; left: var(--tick); transform: translateX(-50%); white-space: nowrap; }
+.result-axis span:first-child { transform: none; }
+.result-axis span:last-child { transform: translateX(-100%); }
+.result-chart-footnote { margin: 14px 0 0; color: var(--muted); font-size: 11px; line-height: 1.7; }
+.result-chart-note { margin: 0 0 24px; color: var(--muted); font-size: 12px; line-height: 1.8; }
+@media (max-width: 680px) {
+  .result-charts { grid-template-columns: 1fr; gap: 12px; }
+  .result-chart { padding: 18px; }
+  .result-chart-heading { margin-bottom: 18px; }
+}
+@media print {
+  .result-charts { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
+  .result-chart { padding: 13px; break-inside: avoid; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .result-chart-heading { margin-bottom: 14px; }
+  .result-chart-heading strong { font-size: 9pt; }
+  .result-chart-context, .result-direction, .result-axis { font-size: 7pt; }
+  .result-row-label { font-size: 8pt; }
+  .result-row-label strong { font-size: 8pt; }
+  .result-chart-footnote, .result-chart-note { font-size: 7pt; }
+}
+
+/* Refresh Token Rotation: HTML elements keep the flow readable without scripts. */
+.rotation-flow { margin: 24px 0 28px; padding: 22px; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+.rotation-flow > figcaption { margin: 0; color: var(--ink); font-size: 15px; font-weight: 700; }
+.rotation-key { margin: 7px 0 18px; color: var(--muted); font-size: 12px; line-height: 1.7; }
+.rotation-steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; list-style: none; padding: 0; margin: 0; }
+.rotation-step, .rotation-reuse-origin, .rotation-branch { position: relative; min-width: 0; padding: 13px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); }
+.rotation-step { margin: 0; }
+.rotation-owner, .rotation-condition { display: block; margin-bottom: 7px; color: var(--muted); font-size: 10px; line-height: 1.6; font-weight: 600; }
+.rotation-step strong, .rotation-reuse-origin strong, .rotation-branch strong { display: block; color: var(--ink); font-size: 12px; line-height: 1.7; overflow-wrap: anywhere; word-break: keep-all; }
+.rotation-detail { display: block; margin-top: 7px; color: var(--text); font-size: 11px; line-height: 1.8; overflow-wrap: anywhere; word-break: keep-all; }
+.rotation-step--atomic { border-color: var(--accent); background: var(--accent-surface); }
+.rotation-step--atomic .rotation-owner { color: var(--accent); }
+.rotation-step:not(:last-child)::after { content: ''; position: absolute; left: 100%; top: 50%; width: 20px; border-top: 1px solid var(--muted); }
+.rotation-step:not(:last-child)::before { content: ''; position: absolute; right: -20px; top: calc(50% - 4px); border: 4px solid transparent; border-left-color: var(--muted); border-right: 0; }
+.rotation-race-note, .rotation-flow-note { margin: 12px 0 0; color: var(--muted); font-size: 11px; line-height: 1.8; }
+.rotation-reuse { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 32px; align-items: center; margin-top: 20px; padding-top: 20px; border-top: 1px dashed var(--line); }
+.rotation-reuse-origin { background: #fff; }
+.rotation-reuse-origin::after { content: ''; position: absolute; left: 100%; top: 50%; width: 16px; border-top: 1px solid var(--muted); }
+.rotation-branches { position: relative; display: grid; grid-auto-rows: 1fr; gap: 12px; }
+.rotation-branches::before { content: ''; position: absolute; left: -17px; top: calc((100% - 12px) / 4); bottom: calc((100% - 12px) / 4); border-left: 1px solid var(--muted); }
+.rotation-branch { background: #fff; }
+.rotation-branch::before { content: ''; position: absolute; left: -17px; top: 50%; width: 16px; border-top: 1px solid var(--muted); }
+.rotation-branch::after { content: ''; position: absolute; left: -5px; top: calc(50% - 4px); border: 4px solid transparent; border-left-color: var(--muted); border-right: 0; }
+.rotation-condition { color: var(--accent); }
+@media (max-width: 680px) {
+  .rotation-flow { padding: 18px; }
+  .rotation-steps { grid-template-columns: 1fr; gap: 20px; }
+  .rotation-step:not(:last-child)::after { left: 50%; top: 100%; width: 0; height: 20px; border-top: 0; border-left: 1px solid var(--muted); }
+  .rotation-step:not(:last-child)::before { right: auto; left: calc(50% - 4px); top: auto; bottom: -20px; border: 4px solid transparent; border-top-color: var(--muted); border-bottom: 0; }
+  .rotation-reuse { grid-template-columns: 1fr; gap: 24px; }
+  .rotation-reuse-origin::after { left: 50%; top: 100%; width: 0; height: 12px; border-top: 0; border-left: 1px solid var(--muted); }
+  .rotation-branches { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: auto; }
+  .rotation-branches::before { left: calc((100% - 12px) / 4); right: calc((100% - 12px) / 4); top: -12px; bottom: auto; border-left: 0; border-top: 1px solid var(--muted); }
+  .rotation-branch { padding: 11px; }
+  .rotation-branch::before { left: 50%; top: -12px; width: 0; height: 12px; border-top: 0; border-left: 1px solid var(--muted); }
+  .rotation-branch::after { left: calc(50% - 4px); top: -5px; border: 4px solid transparent; border-top-color: var(--muted); border-bottom: 0; }
+}
+@media print {
+  .rotation-flow { padding: 13px; break-inside: avoid; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .rotation-flow > figcaption { font-size: 10pt; }
+  .rotation-step, .rotation-reuse-origin, .rotation-branch { padding: 10px; }
+  .rotation-step strong, .rotation-reuse-origin strong, .rotation-branch strong { font-size: 8pt; }
+  .rotation-key, .rotation-detail, .rotation-owner, .rotation-condition, .rotation-race-note, .rotation-flow-note { font-size: 7pt; }
+}
