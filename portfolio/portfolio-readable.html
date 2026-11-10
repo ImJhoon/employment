@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="한재훈의 통합 백엔드 포트폴리오. GRAB의 인증·성능 개선과 마주한끼의 실시간 매칭·상태 보정 사례를 소개합니다.">
+  <title>한재훈 | 백엔드 포트폴리오</title>
+  
+<style>
+:root {
+  color-scheme: light;
+  /* 공통 레이아웃은 기존 GRAB 포트폴리오를 사용한다. */
+  --brand: #d9e2ee;
+  --ink: #202a38;
+  --text: #3f4854;
+  --muted: #626c79;
+  --accent: #344d6c;
+  --accent-surface: #f3f7e9;
+  --line: #dedfd8;
+  --line-subtle: #e9eae3;
+  --surface: #f1f2eb;
+  --reading-width: 820px;
+  font-family: "Pretendard", "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", "Segoe UI", sans-serif;
+  font-synthesis: none;
+  -webkit-text-size-adjust: 100%;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 32px; }
+body { margin: 0; background: #fff; color: var(--text); font-size: 16px; line-height: 1.95; }
+a { color: var(--accent); text-underline-offset: 4px; text-decoration-thickness: 1px; }
+a:hover { text-decoration-thickness: 2px; }
+a:focus-visible, [tabindex]:focus-visible { outline: 3px solid var(--accent); outline-offset: 5px; border-radius: 3px; }
+strong { color: var(--ink); font-weight: 700; }
+p { margin: 0 0 22px; }
+ul { margin: 0; padding-left: 1.25em; }
+li { padding-left: 5px; }
+li::marker { color: #959b8b; }
+h1, h2, h3, h4 { color: var(--ink); margin: 0; word-break: keep-all; overflow-wrap: anywhere; }
+code { padding: 2px 6px; border-radius: 4px; background: var(--surface); color: var(--ink); font: 0.88em/1.6 Consolas, monospace; overflow-wrap: anywhere; }
+.shell { width: min(100% - 64px, 960px); margin-inline: auto; }
+.skip-link { position: absolute; top: -100px; left: 24px; padding: 10px 18px; background: #fff; z-index: 10; }
+.skip-link:focus { top: 12px; }
+
+.masthead { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding-block: 26px; border-bottom: 1px solid var(--line); }
+.identity { display: flex; align-items: baseline; gap: 12px; color: var(--ink); text-decoration: none; font-size: 15px; font-weight: 700; }
+.identity span { color: var(--muted); font-size: 12px; font-weight: 400; letter-spacing: 0.02em; }
+.repository-link { font-size: 13px; color: var(--muted); }
+.hero { max-width: var(--reading-width); padding-top: 56px; }
+.eyebrow { margin-bottom: 10px; color: var(--muted); font-size: 12px; font-weight: 600; letter-spacing: 0.12em; }
+.hero h2 { font-size: clamp(44px, 7vw, 62px); letter-spacing: -0.055em; line-height: 1.2; font-weight: 750; }
+.project-logo { display: block; width: 220px; max-width: 100%; height: auto; }
+.hero .lead { max-width: 720px; margin-top: 22px; margin-bottom: 0; font-size: 18px; line-height: 1.9; word-break: keep-all; overflow-wrap: anywhere; }
+
+.highlights { margin-top: 36px; }
+.summary-heading { margin-bottom: 14px; font-size: 13px; font-weight: 600; color: var(--muted); letter-spacing: 0.03em; }
+.metric-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.metric-card { display: flex; flex-direction: column; min-width: 0; padding: 23px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+.metric-card h4 { font-size: 14px; font-weight: 600; }
+.metric { align-self: flex-start; margin-block: 15px 10px; border-bottom: 4px solid var(--brand); color: var(--accent); font-size: 35px; font-weight: 750; letter-spacing: -0.045em; line-height: 1.25; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.metric small { font-size: 18px; font-weight: 500; }
+.metric-before { color: var(--muted); font-size: 15px; font-weight: 400; letter-spacing: 0; }
+.metric-copy { margin-bottom: 14px; font-size: 14px; line-height: 1.85; word-break: keep-all; overflow-wrap: anywhere; }
+.metric-note { margin-top: auto; margin-bottom: 13px; color: var(--muted); font-size: 12px; line-height: 1.7; }
+.metric-link { align-self: flex-start; font-size: 12px; font-weight: 600; }
+
+.document { max-width: var(--reading-width); margin-inline: auto; }
+.document-section { margin-top: 64px; padding-top: 34px; border-top: 1px solid var(--line); }
+.section-header { margin-bottom: 30px; }
+.section-kicker { margin-bottom: 10px; color: var(--accent); font-size: 12px; font-weight: 650; letter-spacing: 0.04em; }
+.section-header h3 { max-width: 780px; font-size: 28px; line-height: 1.55; letter-spacing: -0.035em; font-weight: 700; }
+.section-number { margin-right: 10px; color: var(--muted); font-size: 15px; letter-spacing: 0; vertical-align: middle; }
+.project-facts { margin: 0; }
+.fact-row { display: grid; grid-template-columns: 104px minmax(0, 1fr); gap: 20px; padding-block: 17px; border-bottom: 1px solid var(--line-subtle); }
+.fact-row:first-child { padding-top: 0; }
+.fact-row:last-child { border-bottom: 0; padding-bottom: 0; }
+.project-facts dt { color: var(--muted); font-size: 14px; }
+.project-facts dd { margin: 0; min-width: 0; font-size: 15px; overflow-wrap: anywhere; }
+.tech-list { display: flex; flex-wrap: wrap; gap: 6px 14px; padding: 0; list-style: none; }
+.tech-list li { padding: 0; }
+
+.block-label { margin-top: 34px; margin-bottom: 12px; font-size: 16px; line-height: 1.6; font-weight: 700; }
+.case-study .section-header + .block-label { margin-top: 0; }
+.detail-list { padding-left: 1.2em; margin-block: 18px 26px; }
+.detail-list li { margin-bottom: 20px; }
+.detail-list li:last-child { margin-bottom: 0; }
+.detail-list li > .item-label { display: block; margin-bottom: 5px; font-size: 15px; }
+.outcome { margin-block: 30px; padding: 20px 24px; border-left: 3px solid var(--brand); background: var(--accent-surface); border-radius: 0 8px 8px 0; }
+.outcome .block-label { margin-top: 0; margin-bottom: 8px; color: var(--accent); }
+.outcome p:last-child { margin-bottom: 0; }
+.result-context { margin-top: -3px; margin-bottom: 16px; color: var(--muted); font-size: 13px; }
+.table-wrapper { max-width: 100%; margin-block: 18px 28px; overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; line-height: 1.75; font-variant-numeric: tabular-nums; }
+th, td { padding: 15px 17px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); }
+thead th { color: var(--muted); background: var(--surface); font-size: 12px; font-weight: 650; }
+th:first-child, td:first-child { width: 44%; }
+td:last-child strong { color: var(--accent); }
+tbody tr:last-child td { border-bottom: 0; }
+.login-p95-table { min-width: 0; table-layout: fixed; }
+.login-p95-table th:first-child { width: 32%; }
+.login-p95-table th:not(:first-child), .login-p95-table td { text-align: right; }
+.login-p95-table tbody th { color: var(--ink); font-weight: 500; }
+.login-p95-table td { white-space: nowrap; }
+.column-note { display: block; margin-top: 3px; font-size: 11px; font-weight: 400; }
+.login-p95-table .peak-load { background: var(--accent-surface); }
+.login-p95-table .peak-load th { font-weight: 700; }
+.comparison-note { margin-top: -12px; margin-bottom: 24px; color: var(--muted); font-size: 12px; line-height: 1.8; }
+figure { margin: 28px 0; }
+figure img { display: block; width: 100%; height: auto; }
+figcaption { margin-top: 12px; color: var(--muted); font-size: 12px; line-height: 1.8; }
+.architecture-figure { width: 100%; max-width: 820px; margin: 16px 0 0; }
+.architecture-preview { display: block; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.architecture-preview img { border-radius: 8px; }
+.reading-note { margin-block: 24px; padding: 20px 24px; border-radius: 8px; background: var(--surface); font-size: 14px; line-height: 1.9; }
+.reading-note .block-label { margin-top: 0; margin-bottom: 8px; font-size: 14px; }
+.reading-note p:last-child { margin-bottom: 0; }
+.reading-note p + p { margin-top: 12px; }
+.sources { margin-top: 30px; padding-top: 18px; border-top: 1px dashed var(--line); }
+.sources h4 { color: var(--muted); font-size: 12px; font-weight: 600; }
+.source-links { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 9px; }
+.source-links a { font-size: 12px; line-height: 1.8; overflow-wrap: anywhere; }
+.page-footer { display: flex; justify-content: space-between; gap: 16px; margin-top: 64px; padding-block: 24px 40px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; }
+.page-footer a { color: var(--muted); }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+@media (max-width: 800px) {
+  .metric-card { padding: 19px; }
+  .metric { font-size: 30px; }
+  .metric small { font-size: 16px; }
+}
+
+@media (max-width: 680px) {
+  body { font-size: 15px; line-height: 1.95; }
+  .shell { width: calc(100% - 40px); }
+  .masthead { padding-block: 20px; }
+  .identity { flex-direction: column; align-items: flex-start; gap: 0; line-height: 1.6; }
+  .identity span { font-size: 11px; }
+  .repository-link { font-size: 12px; }
+  .hero { padding-top: 36px; }
+  .project-logo { width: 180px; }
+  .hero .lead { font-size: 16px; margin-top: 18px; }
+  .highlights { margin-top: 28px; }
+  .metric-grid { grid-template-columns: 1fr; gap: 12px; }
+  .metric-card { padding: 21px; }
+  .metric { font-size: 35px; margin-block: 12px 8px; }
+  .metric-copy { margin-bottom: 12px; }
+  .metric-note { margin-bottom: 8px; }
+  .document-section { margin-top: 46px; padding-top: 26px; }
+  .section-header { margin-bottom: 24px; }
+  .section-header h3 { font-size: 23px; line-height: 1.6; }
+  .fact-row { grid-template-columns: 76px minmax(0, 1fr); gap: 14px; padding-block: 15px; }
+  .project-facts dt { font-size: 12px; }
+  .project-facts dd { font-size: 14px; }
+  .detail-list { padding-left: 1.1em; }
+  .detail-list li { padding-left: 3px; }
+  .block-label { margin-top: 28px; }
+  .reading-note, .outcome { padding: 18px; }
+  table { min-width: 580px; font-size: 13px; }
+  th, td { padding: 13px 15px; }
+  .login-p95-table th, .login-p95-table td { padding: 12px 10px; }
+  .page-footer { margin-top: 46px; }
+}
+
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+@page { size: A4; margin: 16mm; }
+@media print {
+  :root { --reading-width: 100%; }
+  html { scroll-behavior: auto; }
+  body { font-size: 10pt; line-height: 1.75; color: #222; }
+  .shell { width: 100%; }
+  .masthead { padding-block: 0 14px; }
+  .repository-link, .metric-link, .skip-link, .page-footer a { display: none; }
+  .hero { padding-top: 26px; }
+  .hero h2 { font-size: 38pt; }
+  .project-logo { width: 160px; }
+  .hero .lead { font-size: 11pt; margin-top: 14px; }
+  .highlights { margin-top: 22px; }
+  .metric-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; }
+  .metric-card { padding: 13px; background: #fff; break-inside: avoid; }
+  .metric-card h4 { font-size: 9pt; }
+  .metric { font-size: 22pt; margin-block: 10px; }
+  .metric small { font-size: 12pt; }
+  .metric-before, .metric-copy { font-size: 9pt; }
+  .metric-note { font-size: 8pt; margin-bottom: 0; }
+  .document-section { margin-top: 28px; padding-top: 22px; }
+  .section-header { margin-bottom: 20px; break-inside: avoid; break-after: avoid-page; }
+  .section-header h3 { font-size: 17pt; }
+  .block-label { margin-top: 22px; font-size: 11pt; break-after: avoid-page; }
+  p { margin-bottom: 14px; orphans: 3; widows: 3; }
+  .detail-list li { margin-bottom: 12px; }
+  .detail-list li > .item-label { font-size: 10pt; }
+  .fact-row { padding-block: 10px; }
+  .project-facts dd, .project-facts dt { font-size: 9pt; }
+  .table-wrapper { overflow: visible; margin-block: 14px 20px; }
+  table { min-width: 0; font-size: 9pt; }
+  th, td { padding: 10px; }
+  tr { break-inside: avoid; }
+  thead { display: table-header-group; }
+  figure, .outcome { break-inside: avoid; }
+  .reading-note { padding: 14px; font-size: 9pt; }
+  a { color: inherit; }
+  .source-links a { font-size: 8pt; }
+  .page-footer { margin-top: 30px; padding-bottom: 0; }
+}
+
+/* 프로젝트별 색상은 각 원본 포트폴리오의 토큰을 유지한다. */
+.project--grab {
+  --brand: #bdff28; --ink: #191b17; --text: #3d4237; --muted: #64685e;
+  --accent: #456315; --accent-surface: #f3f7e9; --line: #dedfd8;
+  --line-subtle: #e9eae3; --surface: #f1f2eb; --marker: #959b8b;
+}
+.project--majuhankki {
+  --brand: #ff6b4a; --ink: #1e2c4a; --text: #0b1c30; --muted: #505e7f;
+  --accent: #ae3115; --accent-surface: #fff2ed; --line: #e1bfb8;
+  --line-subtle: rgba(30, 44, 74, .1); --surface: #faf7f2; --marker: #8d716a;
+}
+.project { margin-top: 64px; padding-top: 20px; border-top: 3px solid var(--brand); color: var(--text); }
+.project--grab { border-top: 0; }
+.project li::marker { color: var(--marker); }
+.project .hero { padding-top: 24px; }
+.project--majuhankki code, .project--majuhankki thead th { background: var(--accent-surface); }
+.project--majuhankki table { background: var(--surface); }
+.project--majuhankki thead th { color: var(--ink); }
+.portfolio-intro { max-width: var(--reading-width); padding-top: 48px; }
+.portfolio-intro h1 { font-size: clamp(32px, 5vw, 46px); line-height: 1.4; letter-spacing: -.04em; }
+.portfolio-intro .introduction { margin-top: 24px; font-size: 20px; color: var(--ink); word-break: keep-all; }
+.project-index { margin-top: 32px; }
+.project-index ul { display: flex; flex-wrap: wrap; gap: 12px 32px; padding: 0; list-style: none; }
+.project-index li { padding: 0; }
+.project-index a { display: inline-block; font-weight: 700; }
+.project-index a span { display: block; color: var(--muted); font-size: 13px; font-weight: 400; }
+.metric-grid.two-up { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.case-label { font-size: 29px; white-space: normal; word-break: keep-all; }
+.metric-card .metric-link { margin-top: auto; }
+.baseline-note { margin-top: 20px; margin-bottom: 0; color: var(--muted); font-size: 12px; }
+#majuhankki-matching-concurrency table th:first-child, #majuhankki-matching-concurrency table td:first-child { width: 30%; }
+#majuhankki-waiting-reconciliation table th:first-child, #majuhankki-waiting-reconciliation table td:first-child { width: 48%; }
+@media (max-width: 680px) {
+  .portfolio-intro { padding-top: 32px; }
+  .portfolio-intro .introduction { font-size: 18px; }
+  .project { margin-top: 44px; }
+  .metric-grid.two-up { grid-template-columns: 1fr; }
+}
+@media print {
+  .portfolio-intro { padding-top: 20px; }
+  .portfolio-intro h1 { font-size: 26pt; }
+  .portfolio-intro .introduction { font-size: 12pt; }
+  .project { margin-top: 0; padding-top: 0; }
+  .project + .project { break-before: page; }
+  .page-footer { display: none; }
+  .case-label { font-size: 18pt; }
+  .baseline-note { font-size: 8pt; }
+  .tech-list { gap: 2px 10px; }
+}
+
+/* GRAB 결과 비교: 수치는 HTML 텍스트, 막대와 측정 범위는 CSS로 표시한다. */
+.result-charts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-block: 20px 12px; }
+.result-chart { --bar-color: #6c7166; min-width: 0; margin: 0; padding: 22px; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+.result-chart--featured { grid-column: 1 / -1; background: var(--accent-surface); }
+.result-chart-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin: 0 0 22px; color: var(--ink); }
+.result-chart-heading > span:first-child { min-width: 0; }
+.result-chart-heading strong { display: block; font-size: 15px; line-height: 1.55; }
+.result-chart-context { display: block; margin-top: 5px; color: var(--muted); font-size: 11px; line-height: 1.6; }
+.result-direction { flex-shrink: 0; padding-top: 2px; color: var(--accent); font-size: 10px; font-weight: 600; white-space: nowrap; }
+.result-row + .result-row { margin-top: 16px; }
+.result-row--after { --bar-color: var(--accent); }
+.result-row-label { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 10px; margin-bottom: 7px; font-size: 12px; line-height: 1.6; }
+.result-row-label > span { color: var(--muted); }
+.result-row-label strong { color: var(--bar-color); font-size: 13px; font-variant-numeric: tabular-nums; }
+.result-track { position: relative; height: 16px; border-left: 1px solid var(--muted); border-right: 1px solid var(--line); background: repeating-linear-gradient(to right, transparent 0, transparent calc(100% / var(--grid-steps) - 1px), var(--line-subtle) calc(100% / var(--grid-steps) - 1px), var(--line-subtle) calc(100% / var(--grid-steps))); }
+.result-bar, .result-range { position: absolute; top: 2px; height: 12px; box-sizing: border-box; }
+.result-bar { left: 0; width: var(--bar-start); background: var(--bar-color); }
+.result-row--after .result-bar { background: var(--brand); border-block: 1px solid var(--accent); }
+.result-range { left: var(--bar-start); width: var(--bar-range); border-block: 1px solid var(--bar-color); background: repeating-linear-gradient(135deg, var(--bar-color) 0 1px, #fff 1px 4px); }
+.result-end { position: absolute; left: var(--bar-end); top: 1px; height: 14px; border-left: 1px solid var(--bar-color); transform: translateX(-1px); }
+.result-bar--zero { width: 0; border-left: 2px solid var(--bar-color); background: none; }
+.result-row--after .result-bar--zero { border-block: 0; background: none; }
+.result-axis { position: relative; height: 15px; margin-top: 8px; color: var(--muted); font-size: 10px; font-variant-numeric: tabular-nums; line-height: 1.5; }
+.result-axis span { position: absolute; left: var(--tick); transform: translateX(-50%); white-space: nowrap; }
+.result-axis span:first-child { transform: none; }
+.result-axis span:last-child { transform: translateX(-100%); }
+.result-chart-footnote { margin: 14px 0 0; color: var(--muted); font-size: 11px; line-height: 1.7; }
+.result-chart-note { margin: 0 0 24px; color: var(--muted); font-size: 12px; line-height: 1.8; }
+@media (max-width: 680px) {
+  .result-charts { grid-template-columns: 1fr; gap: 12px; }
+  .result-chart { padding: 18px; }
+  .result-chart-heading { margin-bottom: 18px; }
+}
+@media print {
+  .result-charts { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
+  .result-chart { padding: 13px; break-inside: avoid; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .result-chart-heading { margin-bottom: 14px; }
+  .result-chart-heading strong { font-size: 9pt; }
+  .result-chart-context, .result-direction, .result-axis { font-size: 7pt; }
+  .result-row-label { font-size: 8pt; }
+  .result-row-label strong { font-size: 8pt; }
+  .result-chart-footnote, .result-chart-note { font-size: 7pt; }
+}
+
+/* Refresh Token Rotation: HTML elements keep the flow readable without scripts. */
+.rotation-flow { margin: 24px 0 28px; padding: 22px; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+.rotation-flow > figcaption { margin: 0; color: var(--ink); font-size: 15px; font-weight: 700; }
+.rotation-key { margin: 7px 0 18px; color: var(--muted); font-size: 12px; line-height: 1.7; }
+.rotation-steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; list-style: none; padding: 0; margin: 0; }
+.rotation-step, .rotation-reuse-origin, .rotation-branch { position: relative; min-width: 0; padding: 13px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); }
+.rotation-step { margin: 0; }
+.rotation-owner, .rotation-condition { display: block; margin-bottom: 7px; color: var(--muted); font-size: 10px; line-height: 1.6; font-weight: 600; }
+.rotation-step strong, .rotation-reuse-origin strong, .rotation-branch strong { display: block; color: var(--ink); font-size: 12px; line-height: 1.7; overflow-wrap: anywhere; word-break: keep-all; }
+.rotation-detail { display: block; margin-top: 7px; color: var(--text); font-size: 11px; line-height: 1.8; overflow-wrap: anywhere; word-break: keep-all; }
+.rotation-step--atomic { border-color: var(--accent); background: var(--accent-surface); }
+.rotation-step--atomic .rotation-owner { color: var(--accent); }
+.rotation-step:not(:last-child)::after { content: ''; position: absolute; left: 100%; top: 50%; width: 20px; border-top: 1px solid var(--muted); }
+.rotation-step:not(:last-child)::before { content: ''; position: absolute; right: -20px; top: calc(50% - 4px); border: 4px solid transparent; border-left-color: var(--muted); border-right: 0; }
+.rotation-race-note, .rotation-flow-note { margin: 12px 0 0; color: var(--muted); font-size: 11px; line-height: 1.8; }
+.rotation-reuse { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 32px; align-items: center; margin-top: 20px; padding-top: 20px; border-top: 1px dashed var(--line); }
+.rotation-reuse-origin { background: #fff; }
+.rotation-reuse-origin::after { content: ''; position: absolute; left: 100%; top: 50%; width: 16px; border-top: 1px solid var(--muted); }
+.rotation-branches { position: relative; display: grid; grid-auto-rows: 1fr; gap: 12px; }
+.rotation-branches::before { content: ''; position: absolute; left: -17px; top: calc((100% - 12px) / 4); bottom: calc((100% - 12px) / 4); border-left: 1px solid var(--muted); }
+.rotation-branch { background: #fff; }
+.rotation-branch::before { content: ''; position: absolute; left: -17px; top: 50%; width: 16px; border-top: 1px solid var(--muted); }
+.rotation-branch::after { content: ''; position: absolute; left: -5px; top: calc(50% - 4px); border: 4px solid transparent; border-left-color: var(--muted); border-right: 0; }
+.rotation-condition { color: var(--accent); }
+@media (max-width: 680px) {
+  .rotation-flow { padding: 18px; }
+  .rotation-steps { grid-template-columns: 1fr; gap: 20px; }
+  .rotation-step:not(:last-child)::after { left: 50%; top: 100%; width: 0; height: 20px; border-top: 0; border-left: 1px solid var(--muted); }
+  .rotation-step:not(:last-child)::before { right: auto; left: calc(50% - 4px); top: auto; bottom: -20px; border: 4px solid transparent; border-top-color: var(--muted); border-bottom: 0; }
+  .rotation-reuse { grid-template-columns: 1fr; gap: 24px; }
+  .rotation-reuse-origin::after { left: 50%; top: 100%; width: 0; height: 12px; border-top: 0; border-left: 1px solid var(--muted); }
+  .rotation-branches { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: auto; }
+  .rotation-branches::before { left: calc((100% - 12px) / 4); right: calc((100% - 12px) / 4); top: -12px; bottom: auto; border-left: 0; border-top: 1px solid var(--muted); }
+  .rotation-branch { padding: 11px; }
+  .rotation-branch::before { left: 50%; top: -12px; width: 0; height: 12px; border-top: 0; border-left: 1px solid var(--muted); }
+  .rotation-branch::after { left: calc(50% - 4px); top: -5px; border: 4px solid transparent; border-top-color: var(--muted); border-bottom: 0; }
+}
+@media print {
+  .rotation-flow { padding: 13px; break-inside: avoid; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .rotation-flow > figcaption { font-size: 10pt; }
+  .rotation-step, .rotation-reuse-origin, .rotation-branch { padding: 10px; }
+  .rotation-step strong, .rotation-reuse-origin strong, .rotation-branch strong { font-size: 8pt; }
+  .rotation-key, .rotation-detail, .rotation-owner, .rotation-condition, .rotation-race-note, .rotation-flow-note { font-size: 7pt; }
+}
+
+.portfolio-intro{max-width:none;padding-top:46px}.portfolio-intro .introduction{max-width:740px;font-size:19px;line-height:1.9}.eyebrow{color:#626c79}.experience-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:28px}.experience-card{display:flex;flex-direction:column;gap:8px;padding:24px;border:1px solid #dbe2e9;border-radius:10px;text-decoration:none;color:#3f4854;background:#f8fafc}.experience-name{font-size:13px;color:#48627b;font-weight:700}.experience-card strong{font-size:20px;line-height:1.55}.experience-card span:not(.experience-name){font-size:14px}.experience-card small{margin-top:8px;color:#626c79}.case-index{display:flex;flex-wrap:wrap;gap:8px 22px;margin-top:22px;padding:16px 0;border-block:1px solid #e2e6eb;font-size:13px}.hero .project-facts{margin-top:28px;max-width:820px}.project-facts dt{font-weight:600}.hero .lead{font-size:17px}.document-section{margin-top:46px;padding-top:28px}.supporting-details{margin:22px 0;border:1px solid var(--line);border-radius:8px;background:#fff}.supporting-details>summary{padding:15px 18px;color:var(--ink);font-size:14px;font-weight:650;cursor:pointer}.supporting-details>summary:focus-visible{outline:3px solid var(--accent);outline-offset:3px}.details-body{padding:0 20px 20px}.details-body>.block-label:first-child{margin-top:10px}.details-body>:last-child{margin-bottom:0}.scope-note{font-size:13px;line-height:1.9;color:var(--muted);padding:15px 18px;background:var(--surface);border-radius:7px}.details-body .architecture-figure{margin-top:0}.result-charts .result-chart--featured{grid-column:1/-1}
+@media(max-width:680px){.experience-grid{grid-template-columns:1fr}.experience-card{padding:20px}.portfolio-intro{padding-top:28px}.portfolio-intro .introduction{font-size:17px}.case-index{gap:10px 18px}.details-body{padding:0 14px 16px}.hero .project-facts{margin-top:22px}}
+@media print{.portfolio-intro{padding-top:14px}.portfolio-intro .introduction{font-size:11pt}.experience-card{padding:14px;background:#fff}.experience-card strong{font-size:12pt}.experience-card span:not(.experience-name),.experience-card small{font-size:9pt}.case-index{font-size:9pt}.supporting-details{border:0;margin-block:16px}.supporting-details>summary{padding:8px 0;font-size:10pt}.supporting-details .details-body{display:block!important;padding:0}.scope-note{font-size:8pt}.hero .project-facts{margin-top:16px}.document-section{margin-top:24px}}
+
+</style></head>
+<body>
+<a href="#top" class="skip-link">본문으로 건너뛰기</a>
+<header class="masthead shell"><a href="#top" class="identity">한재훈<span>Backend Developer</span></a><a href="https://github.com/ImJhoon" class="repository-link">GitHub</a></header>
+<main id="top" class="shell"><section class="portfolio-intro" aria-labelledby="portfolio-title">
+<p class="eyebrow">BACKEND PORTFOLIO</p><h1 id="portfolio-title">한재훈 · 백엔드 개발자</h1>
+<p class="introduction">회원 인증과 실시간 매칭 기능을 개발했습니다. 부하 테스트로 성능 병목을 분석하고, 경쟁 요청과 저장소 장애 상황에서 데이터 상태가 유지되는지 검증했습니다.</p>
+<div class="experience-grid">
+<a class="experience-card" href="#grab"><span class="experience-name">GRAB</span><strong>회원·인증과 성능 개선</strong><span>로그인 메모리 부족 대응 · 반복 DB 조회 개선</span><small>2026.09.22 ~ 11.04 · 4명</small></a>
+<a class="experience-card" href="#majuhankki"><span class="experience-name">마주한끼</span><strong>실시간 매칭과 상태 관리</strong><span>동시 요청의 상태 전이 보호 · 대기 정보 복구</span><small>2026.08.21 ~ 09.03 · 2명</small></a>
+</div>
+<nav class="case-index" aria-label="핵심 사례 바로가기"><a href="#grab-login-stability">01 로그인 자원 제어</a><a href="#grab-user-id-cache">02 반복 조회 개선</a><a href="#majuhankki-matching-concurrency">03 매칭 동시성</a><a href="#majuhankki-waiting-reconciliation">04 대기 상태 복구</a></nav>
+</section>
+<article id="grab" class="project project--grab" aria-labelledby="grab-title">
+<header class="hero">
+<h2 id="grab-title"><img class="project-logo" src="assets/grab-wordmark.png" alt="GRAB" width="2172" height="724" decoding="async"></h2><p class="lead">정해진 시각에 한정 수량 상품을 판매하는 DROP 커머스 서비스입니다. WISH, 주문, 결제, 배송까지 이어지며, 오픈 시각에 요청이 한꺼번에 몰린다는 점이 서비스의 특징입니다.</p>
+<dl class="project-facts"><div class="fact-row"><dt>기간 · 인원</dt><dd>2026.09.22 ~ 2026.11.04 (약 6주) · 4명</dd></div><div class="fact-row"><dt>담당</dt><dd>회원·인증 전 영역 (설계, API, 프론트 연동, 부하 측정·개선), 백엔드 초기 환경 구성</dd></div><div class="fact-row"><dt>기술</dt><dd><ul class="tech-list" aria-label="사용 기술"><li>Java 17</li><li>Spring Boot 4</li><li>Spring Security</li><li>JPA</li><li>PostgreSQL</li><li>Redis</li><li>Caffeine</li><li>React</li><li>Docker</li><li>GitHub Actions</li><li>k6</li></ul>
+</dd></div><div class="fact-row"><dt>저장소</dt><dd><a href="https://github.com/prgrms-aibe-devcourse/AIBE7_FinalProject_Team3">GitHub</a></dd></div></dl></header>
+
+<section class="highlights" aria-labelledby="grab-highlights-title"><h3 id="grab-highlights-title" class="summary-heading">핵심 성과</h3><div class="metric-grid two-up"><article class="metric-card"><h4>로그인 p95 응답시간</h4><p class="metric"><span class="metric-before">26.1초 → </span>3.0초</p>
+<p class="metric-copy">Argon2 동시 실행을 제한해 로그인 폭주 시 서버를 안정화했습니다.</p>
+<p class="metric-note">로컬 부하 테스트 · 동시 로그인 80명</p>
+<a href="#grab-login-stability" class="metric-link">사례 01 보기</a></article>
+<article class="metric-card"><h4>인증 API 처리량</h4><p class="metric">1.95<small>배</small></p>
+<p class="metric-copy">반복 ID 조회와 별도 트랜잭션 비용을 줄여 DB 커넥션 경합을 완화했습니다.</p>
+<p class="metric-note">로컬 테스트 · DB 지연 3ms · 계정 800개 · VU 1600</p>
+<a href="#grab-user-id-cache" class="metric-link">사례 02 보기</a></article>
+</div></section>
+<div class="document">
+<section id="grab-overview" class="document-section" aria-labelledby="grab-overview-title"><header class="section-header"><h3 id="grab-overview-title">전체 서비스 구성</h3></header><details class="supporting-details"><summary>시스템 아키텍처 보기</summary><div class="details-body">
+
+
+<figure class="architecture-figure" aria-labelledby="grab-overview-title">
+<div class="architecture-preview"><img src="assets/grab-architecture.svg" alt="React에서 Nginx를 거쳐 내부 Caffeine 캐시를 둔 Spring Boot로 연결되며, 백엔드는 PostgreSQL·Valkey·Supabase Storage와 외부 서비스·검증 도구에 연결됩니다." width="1280" height="720" decoding="async"></div>
+</figure>
+</div></details></section>
+
+
+
+<section id="grab-login-stability" class="document-section case-study" aria-labelledby="grab-login-stability-title"><header class="section-header"><p class="section-kicker">핵심 사례 01</p>
+<h3 id="grab-login-stability-title">동시 로그인으로 발생한 메모리 부족을 해시 실행 제한으로 개선</h3></header>
+<h4 class="block-label">문제</h4><p>로그인 요청마다 비밀번호를 검증하는 해시 연산에 메모리가 필요했습니다. 여러 검증이 동시에 실행되면서 힙이 부족해졌고, 로컬 부하 테스트에서 요청 실패와 서버 응답 불가를 재현했습니다.</p>
+<h4 class="block-label">원인</h4><ul class="detail-list"><li>비밀번호 해시 Argon2id(메모리 19MiB, OWASP 최소 권장값)는 <strong>해시 1건이 진행되는 동안 힙 약 19MiB를 붙잡습니다.</strong> BouncyCastle 바이트코드로 확인했습니다.</li><li>GC 로그로 Full GC 직후 힙을 보니, 동시 해시가 <strong>약 25건</strong>을 넘으면 힙 한도에 닿아 Full GC가 반복되고 요청이 실패했습니다.</li><li>가입 여부를 숨기려고 없는 계정도 더미 해시로 검증하므로, 틀린 비밀번호 요청도 같은 비용이 들었습니다.</li></ul>
+<h4 class="block-label">해결</h4><p>적용한 비밀번호 해시 강도를 유지하면서 <code>PasswordEncoder</code>를 감싸 <strong>해시를 동시에 4건까지만 실행</strong>하도록 했습니다.</p>
+<ul class="detail-list"><li>동시에 진행되는 해시 수를 제한해 메모리 사용을 줄이고, CPU에서 처리할 수 있는 작업을 순차적으로 실행하도록 했습니다.</li><li>해시 연산을 기다리는 요청에 대기 순서대로 실행 기회를 부여하고, 3초 안에 차례를 얻지 못하면 503과 Retry-After를 반환했습니다.</li><li>로그인·더미 해시·가입·비밀번호 변경에 같은 실행 제한을 적용했습니다.</li></ul>
+<h4 class="block-label">결과</h4><p class="result-context">(같은 환경·시나리오로 재측정)</p>
+<div class="result-charts">
+<figure class="result-chart" aria-labelledby="grab-result-login-latency-title" data-scale-max="30" style="--grid-steps:3">
+<figcaption class="result-chart-heading"><span><strong id="grab-result-login-latency-title">로그인 p95 응답시간</strong><span class="result-chart-context">80명 일제 로그인 · 단위: 초</span></span><span class="result-direction">낮을수록 좋음</span></figcaption>
+<div class="result-plot">
+<div class="result-row result-row--before" data-min="26.1" data-max="26.1" style="--bar-start:87.000000%;--bar-end:87.000000%;--bar-range:0.000000%"><div class="result-row-label"><span>개선 전</span><strong>26.1초</strong></div><div class="result-track" aria-hidden="true"><span class="result-bar"></span><span class="result-end"></span></div></div>
+<div class="result-row result-row--after" data-min="3" data-max="3" style="--bar-start:10.000000%;--bar-end:10.000000%;--bar-range:0.000000%"><div class="result-row-label"><span>개선 후</span><strong>3.0초</strong></div><div class="result-track" aria-hidden="true"><span class="result-bar"></span><span class="result-end"></span></div></div>
+<div class="result-axis" aria-hidden="true"><span style="--tick:0.0000%">0</span><span style="--tick:33.3333%">10</span><span style="--tick:66.6667%">20</span><span style="--tick:100.0000%">30초</span></div>
+</div>
+
+</figure>
+<figure class="result-chart" aria-labelledby="grab-result-login-failures-title" data-scale-max="80" style="--grid-steps:4">
+<figcaption class="result-chart-heading"><span><strong id="grab-result-login-failures-title">로그인 실패 건수</strong><span class="result-chart-context">회차당 요청 80건 · 2회 측정</span></span><span class="result-direction">낮을수록 좋음</span></figcaption>
+<div class="result-plot">
+<div class="result-row result-row--before" data-min="29" data-max="32" style="--bar-start:36.250000%;--bar-end:40.000000%;--bar-range:3.750000%"><div class="result-row-label"><span>개선 전</span><strong>29·32건</strong></div><div class="result-track" aria-hidden="true"><span class="result-bar"></span><span class="result-range"></span><span class="result-end"></span></div></div>
+<div class="result-row result-row--after" data-min="0" data-max="0" style="--bar-start:0.000000%;--bar-end:0.000000%;--bar-range:0.000000%"><div class="result-row-label"><span>개선 후</span><strong>0·0건</strong></div><div class="result-track" aria-hidden="true"><span class="result-bar result-bar--zero"></span></div></div>
+<div class="result-axis" aria-hidden="true"><span style="--tick:0.0000%">0</span><span style="--tick:25.0000%">20</span><span style="--tick:50.0000%">40</span><span style="--tick:75.0000%">60</span><span style="--tick:100.0000%">80건</span></div>
+</div>
+<p class="result-chart-footnote">수치는 1차·2차 측정 순서입니다.</p>
+</figure>
+</div>
+<p class="result-chart-note">모든 축은 0에서 시작합니다. 회색은 개선 전, 녹색은 개선 후이며, 막대 끝의 빗금은 두 측정값 사이의 범위입니다.</p>
+<p class="scope-note">로컬 테스트 · CPU 2개 · 메모리 1GiB · 힙 550MiB · 80건 일제 로그인. 별도 반복 부하 VU 80에서는 대기 초과로 11.6%를 거절했습니다.</p><details class="supporting-details"><summary>재현 조건과 반복 부하의 메모리 측정</summary><div class="details-body"><p> DROP 오픈 직전에 로그인이 몰리는 상황을 k6로 재현했습니다. 운영보다 약한 t3.micro 기준(메모리 1GiB, CPU 2개, 힙 550MiB)에서 로그인 80명이 동시에 몰리자 p95가 26.1초까지 늘고 29건이 실패했습니다. 힙 OOM으로 Tomcat 스레드가 죽어, 재시작 전까지 서버가 응답하지 않은 적도 있었습니다.</p><h4 class="block-label">보조 검증: 반복 부하에서의 힙 사용</h4>
+<p>micro·G1 환경에서 로그인 요청을 30초간 반복한 결과도 비교했습니다. 실제 이용 패턴과는 구분하며, 해시 연산이 계속 유입될 때 메모리 압박을 확인하는 보조 검증입니다.</p>
+<p>VU 40 조건에서 Full GC 직후 힙은 <strong>422MiB에서 124MiB로</strong>, 관측 최댓값은 <strong>544MiB에서 137MiB로</strong> 줄었습니다. VU별 응답시간과 상세 측정 조건은 아래 개선 전·후 측정 자료에 정리했습니다.</p>
+<p>반복 부하 VU 80의 개선 후 측정에서는 대기 한도 초과로 98건(11.6%)을 거절했습니다. 동시 실행 제한은 과부하 시 일부 요청을 거절하는 비용이 있습니다.</p>
+</div></details><footer class="sources"><h4>근거 자료</h4><div class="source-links"><a href="https://github.com/prgrms-aibe-devcourse/AIBE7_FinalProject_Team3/blob/feat/GR-178-limit-argon2-concurrency/Backend/src/main/java/org/example/grab/global/security/password/ConcurrencyLimitedPasswordEncoder.java">ConcurrencyLimitedPasswordEncoder</a><a href="https://github.com/prgrms-aibe-devcourse/AIBE7_FinalProject_Team3/blob/feat/GR-178-limit-argon2-concurrency/Backend/k6/login-burst/result.md">개선 전 측정</a><a href="https://github.com/prgrms-aibe-devcourse/AIBE7_FinalProject_Team3/blob/feat/GR-178-limit-argon2-concurrency/Backend/k6/login-burst/result-gr178.md">개선 후 측정</a></div></footer>
+</section>
+
+<section id="grab-user-id-cache" class="document-section case-study" aria-labelledby="grab-user-id-cache-title"><header class="section-header"><p class="section-kicker">핵심 사례 02</p>
+<h3 id="grab-user-id-cache-title">같은 회원을 반복 조회하던 비용을 줄여 DB 연결 대기 완화</h3></header>
+<h4 class="block-label">문제</h4><p>로그인한 회원을 식별하기 위한 같은 DB 조회가 인증 요청마다 반복됐습니다. 토큰에 담긴 외부 식별자 <code>publicId</code>를 서비스에서 사용하는 내부 <code>userId</code>로 변환하는 과정이었습니다.</p>
+<h4 class="block-label">원인</h4><p>내 정보 조회에는 ID 변환과 회원 정보 조회가 필요했습니다. 두 작업이 별도 트랜잭션으로 실행되어 DB 연결을 두 번 빌렸습니다. DB 왕복 지연 약 3ms의 로컬 환경에서는 가상 사용자 800명부터 연결 풀이 포화되며 대기가 늘었습니다.</p>
+<h4 class="block-label">해결</h4><p>ID 매핑 캐시와 캐시 누락 경로 개선을 함께 적용했습니다.</p>
+<ul class="detail-list"><li><strong class="item-label">캐시 대상과 위치:</strong> 변경되지 않는 publicId → 내부 userId 매핑만 Caffeine 로컬 메모리에 저장했습니다. 적중하면 ID 변환을 위한 DB 접근이 사라집니다. 원격 캐시의 네트워크 왕복도 추가하지 않습니다.</li><li><strong class="item-label">캐시 범위:</strong> 회원 행과 ID 매핑을 유지하는 정책에 맞춰 TTL을 생략하고, 최대 10만 항목으로 제한했습니다. 없는 회원은 저장하지 않습니다.</li><li><strong class="item-label">첫 요청 비용:</strong> ID 변환 서비스의 읽기 트랜잭션을 제거했습니다. 캐시가 비어도 자동 커밋 SELECT 한 문장으로 조회합니다. JWT에 내부 ID를 넣는 방법은 기존 Claim 계약과 충돌해 제외했습니다.</li><li><strong class="item-label">회원 상태 확인:</strong> 캐시는 ID 매핑만 보관합니다. 내 정보 조회는 계속 DB에서 회원 정보를 읽고 정지·탈퇴 상태를 확인합니다.</li></ul>
+<p class="reading-note"><strong>DB 왕복은 SELECT 횟수와 다릅니다.</strong> 쿼리 실행뿐 아니라 트랜잭션 시작·종료에도 DB 통신이 발생합니다. 여기서는 네트워크 지연 전후의 응답시간 차이로 왕복 수를 추정했습니다.</p><h4 class="block-label">검증</h4><p> PostgreSQL 로그와 pg_stat_statements로 트랜잭션 경계·문장 수를 확인하고, netem 지연 전후 응답시간 차이로 DB 왕복 수를 추정했습니다. 캐시 적중 경로에서는 ID 변환 SELECT가 사라졌고, 누락 경로에서는 별도 BEGIN·COMMIT 없이 SELECT 한 문장만 실행됐습니다.</p>
+<h4 class="block-label">결과</h4><p class="result-context">(GET /api/v1/users/me, 같은 날 전후 교대 측정)</p>
+<div class="result-charts">
+<figure class="result-chart result-chart--featured" aria-labelledby="grab-result-throughput-title" data-scale-max="1600" style="--grid-steps:4">
+<figcaption class="result-chart-heading"><span><strong id="grab-result-throughput-title">내 정보 조회 처리량</strong><span class="result-chart-context">VU 1600 · 단위: 건/초</span></span><span class="result-direction">높을수록 좋음</span></figcaption>
+<div class="result-plot">
+<div class="result-row result-row--before" data-min="763.8" data-max="769.1" style="--bar-start:47.737500%;--bar-end:48.068750%;--bar-range:0.331250%"><div class="result-row-label"><span>개선 전</span><strong>763.8~769.1건/초</strong></div><div class="result-track" aria-hidden="true"><span class="result-bar"></span><span class="result-range"></span><span class="result-end"></span></div></div>
+<div class="result-row result-row--after" data-min="1490.3" data-max="1504.1" style="--bar-start:93.143750%;--bar-end:94.006250%;--bar-range:0.862500%"><div class="result-row-label"><span>개선 후</span><strong>1,490.3~1,504.1건/초</strong></div><div class="result-track" aria-hidden="true"><span class="result-bar"></span><span class="result-range"></span><span class="result-end"></span></div></div>
+<div class="result-axis" aria-hidden="true"><span style="--tick:0.0000%">0</span><span style="--tick:25.0000%">400</span><span style="--tick:50.0000%">800</span><span style="--tick:75.0000%">1,200</span><span style="--tick:100.0000%">1,600건/초</span></div>
+</div>
+
+</figure>
+<figure class="result-chart" aria-labelledby="grab-result-db-roundtrips-title" data-scale-max="6" style="--grid-steps:3">
+<figcaption class="result-chart-heading"><span><strong id="grab-result-db-roundtrips-title">요청당 추정 DB 왕복</strong><span class="result-chart-context">단위: 회</span></span><span class="result-direction">낮을수록 좋음</span></figcaption>
+<div class="result-plot">
+<div class="result-row result-row--before" data-min="4.07" data-max="4.07" style="--bar-start:67.833333%;--bar-end:67.833333%;--bar-range:0.000000%"><div class="result-row-label"><span>개선 전</span><strong>4.07회</strong></div><div class="result-track" aria-hidden="true"><span class="result-bar"></span><span class="result-end"></span></div></div>
+<div class="result-row result-row--after" data-min="2.01" data-max="2.01" style="--bar-start:33.500000%;--bar-end:33.500000%;--bar-range:0.000000%"><div class="result-row-label"><span>개선 후</span><strong>2.01회</strong></div><div class="result-track" aria-hidden="true"><span class="result-bar"></span><span class="result-end"></span></div></div>
+<div class="result-axis" aria-hidden="true"><span style="--tick:0.0000%">0</span><span style="--tick:33.3333%">2</span><span style="--tick:66.6667%">4</span><span style="--tick:100.0000%">6회</span></div>
+</div>
+<p class="result-chart-footnote">요청당 트랜잭션: 약 2개 → 약 1개. 개선 후 DB 왕복·트랜잭션 수는 회원 ID가 캐시에 이미 저장된 요청 기준입니다.</p>
+</figure>
+
+
+<figure class="result-chart" aria-labelledby="grab-result-connection-wait-title" data-scale-max="30" style="--grid-steps:3">
+<figcaption class="result-chart-heading"><span><strong id="grab-result-connection-wait-title">커넥션 획득 평균 시간</strong><span class="result-chart-context">VU 800 · 단위: ms</span></span><span class="result-direction">낮을수록 좋음</span></figcaption>
+<div class="result-plot">
+<div class="result-row result-row--before" data-min="24.78" data-max="27.82" style="--bar-start:82.600000%;--bar-end:92.733333%;--bar-range:10.133333%"><div class="result-row-label"><span>개선 전</span><strong>24.78~27.82ms</strong></div><div class="result-track" aria-hidden="true"><span class="result-bar"></span><span class="result-range"></span><span class="result-end"></span></div></div>
+<div class="result-row result-row--after" data-min="0.57" data-max="0.84" style="--bar-start:1.900000%;--bar-end:2.800000%;--bar-range:0.900000%"><div class="result-row-label"><span>개선 후</span><strong>0.57~0.84ms</strong></div><div class="result-track" aria-hidden="true"><span class="result-bar"></span><span class="result-range"></span><span class="result-end"></span></div></div>
+<div class="result-axis" aria-hidden="true"><span style="--tick:0.0000%">0</span><span style="--tick:33.3333%">10</span><span style="--tick:66.6667%">20</span><span style="--tick:100.0000%">30ms</span></div>
+</div>
+
+</figure>
+</div>
+<p class="result-chart-note">응답시간·처리량·DB 연결 획득 시간은 각 조건을 두 번 측정한 값의 범위입니다. 빗금은 두 측정값 사이를 나타냅니다. 모든 축은 0에서 시작하며 지표별 눈금은 다릅니다.</p>
+<p><strong>검증 결과:</strong> 개선 후 교대 측정의 캐시 누락 비율은 0.32%였고, 네 실행 모두 요청 실패·401·커넥션 타임아웃은 0건이었습니다.</p>
+<ul class="detail-list"><li><strong class="item-label">해석:</strong> 반복 ID 조회를 제거해 커넥션 점유와 대기를 줄였습니다. 낮은 부하에서 줄어든 중앙값 약 6.4ms도 제거한 DB 왕복 약 2회와 맞았습니다. 위 성과는 캐시 도입과 조회 트랜잭션 제거를 함께 적용한 결과입니다.</li></ul>
+<h4 class="block-label">설계 회고</h4><p>이번 개선은 기존 JWT의 publicId와 내부 userId를 분리한 구조를 유지하면서 반복 조회 비용을 줄였습니다. 현재 구조를 돌아보면, 자체 발급 JWT에 내부 userId를 담아 ID 변환과 매핑 캐시 자체를 없애는 대안도 검토할 필요가 있습니다. 내부 PK 비노출 정책을 조정해야 하지만, 서비스가 사용하는 식별자와 인증 정보를 일치시켜 요청 처리와 유지보수를 단순화할 수 있습니다.</p>
+<aside class="reading-note"><h4 class="block-label">남은 과제</h4><p>약 1,500건/초는 이번 범위의 최고 측정 처리량이며, 개선 후 처리량 한계는 더 높은 부하에서 확인해야 합니다.</p>
+<p>캐시는 인스턴스마다 따로 채워지므로 재기동·첫 요청·캐시 항목 자동 제거 이후의 효과는 접속 패턴에 따라 달라집니다.</p>
+<p>같은 키의 동시 누락은 하나로 합치지 않아 중복 DB 조회가 가능하며, 회원 행 삭제나 ID 변경 정책을 도입하면 무효화 정책도 재검토해야 합니다.</p>
+</aside>
+<p class="scope-note">로컬 Docker · DB 왕복 지연 약 3ms · DB 연결 최대 10개 · 계정 800개 · 처리량은 VU 1600 기준. 개선 후 DB 왕복 수는 캐시 예열 기준이며, 캐시와 조회 트랜잭션 조정을 함께 적용한 결과입니다.</p><details class="supporting-details"><summary>전체 측정 조건과 응답시간 지표</summary><div class="details-body"><aside class="reading-note"><h4 class="block-label">측정 조건</h4>
+<p><strong>측정 대상:</strong> 로그인한 사용자의 내 정보 조회 API(GET /api/v1/users/me)를 비교했습니다.</p>
+<p><strong>실행 환경:</strong> 로컬 Docker에서 백엔드는 CPU 2개·메모리 1GiB(힙 550MiB), DB는 CPU 1개·메모리 512MiB로 제한했습니다. 백엔드가 사용할 수 있는 DB 연결은 최대 10개로 설정했습니다.</p>
+<p><strong>DB 통신 지연:</strong> DB와 통신할 때 발생하는 네트워크 비용을 반영하기 위해 netem으로 약 3ms의 왕복 지연을 적용했습니다.</p>
+<p><strong>요청 방식:</strong> 동시에 요청을 반복하는 가상 사용자(VU)를 25명부터 1,600명까지 늘렸습니다. 각 단계는 60초간 실행했고, 각 사용자는 응답을 받은 뒤 1초 쉬고 다음 요청을 보냈습니다. 테스트 계정은 800개이며, 가상 사용자가 800명을 넘는 단계에서는 계정을 공유했습니다.</p>
+<p><strong>비교 방법:</strong> 같은 날 같은 환경에서 개선 전 → 개선 후 → 개선 전 → 개선 후 순서로 실행해, 각각 두 번 측정했습니다.</p>
+</aside><div class="result-charts"><figure class="result-chart" aria-labelledby="grab-result-latency-median-title" data-scale-max="20" style="--grid-steps:4">
+<figcaption class="result-chart-heading"><span><strong id="grab-result-latency-median-title">응답시간 중앙값</strong><span class="result-chart-context">VU 25 · 단위: ms</span></span><span class="result-direction">낮을수록 좋음</span></figcaption>
+<div class="result-plot">
+<div class="result-row result-row--before" data-min="18.4" data-max="18.7" style="--bar-start:92.000000%;--bar-end:93.500000%;--bar-range:1.500000%"><div class="result-row-label"><span>개선 전</span><strong>18.4~18.7ms</strong></div><div class="result-track" aria-hidden="true"><span class="result-bar"></span><span class="result-range"></span><span class="result-end"></span></div></div>
+<div class="result-row result-row--after" data-min="12" data-max="12.3" style="--bar-start:60.000000%;--bar-end:61.500000%;--bar-range:1.500000%"><div class="result-row-label"><span>개선 후</span><strong>12.0~12.3ms</strong></div><div class="result-track" aria-hidden="true"><span class="result-bar"></span><span class="result-range"></span><span class="result-end"></span></div></div>
+<div class="result-axis" aria-hidden="true"><span style="--tick:0.0000%">0</span><span style="--tick:25.0000%">5</span><span style="--tick:50.0000%">10</span><span style="--tick:75.0000%">15</span><span style="--tick:100.0000%">20ms</span></div>
+</div>
+
+</figure><figure class="result-chart" aria-labelledby="grab-result-latency-p95-title" data-scale-max="150" style="--grid-steps:3">
+<figcaption class="result-chart-heading"><span><strong id="grab-result-latency-p95-title">응답시간 p95</strong><span class="result-chart-context">VU 800 · 단위: ms</span></span><span class="result-direction">낮을수록 좋음</span></figcaption>
+<div class="result-plot">
+<div class="result-row result-row--before" data-min="126.2" data-max="141.4" style="--bar-start:84.133333%;--bar-end:94.266667%;--bar-range:10.133333%"><div class="result-row-label"><span>개선 전</span><strong>126.2~141.4ms</strong></div><div class="result-track" aria-hidden="true"><span class="result-bar"></span><span class="result-range"></span><span class="result-end"></span></div></div>
+<div class="result-row result-row--after" data-min="14.1" data-max="16.7" style="--bar-start:9.400000%;--bar-end:11.133333%;--bar-range:1.733333%"><div class="result-row-label"><span>개선 후</span><strong>14.1~16.7ms</strong></div><div class="result-track" aria-hidden="true"><span class="result-bar"></span><span class="result-range"></span><span class="result-end"></span></div></div>
+<div class="result-axis" aria-hidden="true"><span style="--tick:0.0000%">0</span><span style="--tick:33.3333%">50</span><span style="--tick:66.6667%">100</span><span style="--tick:100.0000%">150ms</span></div>
+</div>
+
+</figure></div></div></details><details class="supporting-details"><summary>캐시 만료·용량과 메모리 측정</summary><div class="details-body"><ul class="detail-list"><li><strong class="item-label">만료와 용량:</strong> ID 매핑이 변경되지 않고 탈퇴 시에도 회원 행을 유지하므로 TTL·명시적 무효화를 생략했습니다. 캐시는 최대 10만 항목으로 제한하고, 없는 회원은 저장하지 않습니다. 로컬 Java 17·Caffeine 3.2.4 환경에서 10만 항목을 적재한 뒤 측정한 캐시 객체 그래프는 약 13.45MiB로, 힙 상한 550MiB의 약 2.44%였습니다(공용 스레드풀 제외). Micrometer로 캐시 적중·누락·크기·자동 제거 횟수를 관측합니다.</li></ul></div></details><footer class="sources"><h4>근거 자료</h4><div class="source-links"><a href="https://github.com/prgrms-aibe-devcourse/AIBE7_FinalProject_Team3/blob/7c2e51b84c45d4d31eea2e7549907d40416fc323/Backend/src/main/java/org/example/grab/domain/user/service/UserIdLookupService.java">UserIdLookupService</a><a href="https://github.com/prgrms-aibe-devcourse/AIBE7_FinalProject_Team3/blob/7c2e51b84c45d4d31eea2e7549907d40416fc323/Backend/src/main/java/org/example/grab/domain/user/support/UserIdCacheConfig.java">캐시 설정</a><a href="https://github.com/prgrms-aibe-devcourse/AIBE7_FinalProject_Team3/blob/7c2e51b84c45d4d31eea2e7549907d40416fc323/Backend/src/test/java/org/example/grab/domain/user/service/UserIdLookupServiceTest.java">캐시 테스트</a><a href="https://github.com/prgrms-aibe-devcourse/AIBE7_FinalProject_Team3/blob/7c2e51b84c45d4d31eea2e7549907d40416fc323/Backend/k6/user-id-lookup/result.md">측정 결과·재현 절차</a><a href="https://github.com/prgrms-aibe-devcourse/AIBE7_FinalProject_Team3/pull/223">기준선 PR #223</a><a href="https://github.com/prgrms-aibe-devcourse/AIBE7_FinalProject_Team3/pull/226">개선 PR #226</a></div></footer>
+</section>
+
+<section id="grab-token-rotation" class="document-section case-study" aria-labelledby="grab-token-rotation-title"><header class="section-header"><p class="section-kicker">인증 설계·구현</p>
+<h3 id="grab-token-rotation-title">로그인 연장에 사용한 토큰을 한 번만 교체하도록 처리</h3></header>
+<p>로그인 상태를 연장할 때 사용하는 Refresh Token을 재발급마다 새 토큰으로 교체합니다. 같은 토큰으로 요청이 동시에 들어와도 한 요청만 교체에 성공하도록 Redis Lua로 처리했습니다.</p>
+<figure class="rotation-flow" aria-labelledby="grab-rotation-flow-title" aria-describedby="grab-rotation-flow-note">
+<figcaption id="grab-rotation-flow-title">Refresh Token 교체와 재사용 처리</figcaption>
+<p class="rotation-key">A는 사용 전 Refresh Token, B는 새로 발급할 Refresh Token입니다.</p>
+<ol class="rotation-steps">
+<li class="rotation-step"><span class="rotation-owner">01 · 클라이언트</span><strong>A로 재발급 요청</strong><span class="rotation-detail">Refresh Token을 쿠키로 전송</span></li>
+<li class="rotation-step"><span class="rotation-owner">02 · 백엔드</span><strong>세션·회원 상태 확인</strong><span class="rotation-detail">새 Access Token과 B 준비</span></li>
+<li class="rotation-step rotation-step--atomic"><span class="rotation-owner">03 · Redis Lua</span><strong>A → B 원자적 교체</strong><span class="rotation-detail">A 삭제 · B 저장<br>사용 이력·현재 토큰 갱신</span></li>
+<li class="rotation-step"><span class="rotation-owner">04 · 응답</span><strong>204 · 새 쿠키 설정</strong><span class="rotation-detail">새 Access Token과 B 전달</span></li>
+</ol>
+<p class="rotation-race-note">교체 경합에서 A 삭제에 실패한 요청은 새 토큰을 저장하지 않고 401로 거부합니다.</p>
+<div class="rotation-reuse">
+<div class="rotation-reuse-origin"><span class="rotation-owner">교체된 A가 다시 제출되면</span><strong>Redis Lua로 사용 이력 확인</strong><span class="rotation-detail">A의 교체 시각과 세션 ID 조회</span></div>
+<div class="rotation-branches">
+<div class="rotation-branch"><span class="rotation-condition">교체 후 10초 미만</span><strong>401 · 요청만 거부</strong><span class="rotation-detail">현재 Refresh Token 유지</span></div>
+<div class="rotation-branch"><span class="rotation-condition">교체 후 10초 이상</span><strong>401 · 현재 토큰 폐기</strong><span class="rotation-detail">해당 세션의 현재 Refresh Token 폐기</span></div>
+</div>
+</div>
+<p id="grab-rotation-flow-note" class="rotation-flow-note">사용 이력이 없는 토큰도 401로 거부합니다. 10초가 지나는 것만으로 세션이 자동 폐기되지는 않으며, 이전 토큰이 다시 제출될 때 판정합니다.</p>
+</figure>
+<ul class="detail-list"><li><strong class="item-label">원자적 교체:</strong> 기존 토큰 삭제, 새 토큰·현재 세션 정보 저장, 사용 이력 기록을 하나의 Redis Lua 스크립트로 처리했습니다. 기존 토큰 삭제에 성공한 요청만 교체를 진행하도록 했습니다.</li><li><strong class="item-label">재사용 처리 정책:</strong> 교체 후 10초 미만의 재사용은 요청만 거부하고, 10초 이상 지난 토큰이 다시 제출되면 해당 세션의 현재 Refresh Token을 폐기합니다.</li></ul>
+<h4 class="block-label">통합 테스트 구성</h4><p>Testcontainers 기반 Redis 통합 테스트에 같은 토큰의 동시 교체 20건 중 1건만 성공하는지, 유예 시간 안팎의 재사용과 세션 폐기가 정책대로 동작하는지 확인하는 시나리오를 작성했습니다.</p>
+<p><strong>한계:</strong> 재사용자의 정체를 판별하지 않으며, 10초 경과만으로 세션이 자동 폐기되지는 않습니다.</p>
+<footer class="sources"><h4>근거 자료</h4><div class="source-links"><a href="https://github.com/prgrms-aibe-devcourse/AIBE7_FinalProject_Team3/blob/223b697783bbd712c68d359999f42ad141353802/Backend/src/main/java/org/example/grab/domain/auth/service/TokenRefreshService.java">TokenRefreshService</a><a href="https://github.com/prgrms-aibe-devcourse/AIBE7_FinalProject_Team3/blob/223b697783bbd712c68d359999f42ad141353802/Backend/src/main/resources/redis/refresh-token-rotate.lua">교체 Lua</a><a href="https://github.com/prgrms-aibe-devcourse/AIBE7_FinalProject_Team3/blob/223b697783bbd712c68d359999f42ad141353802/Backend/src/main/resources/redis/refresh-token-reuse.lua">재사용 판정 Lua</a><a href="https://github.com/prgrms-aibe-devcourse/AIBE7_FinalProject_Team3/blob/223b697783bbd712c68d359999f42ad141353802/Backend/src/main/resources/application.yml">유예 설정</a><a href="https://github.com/prgrms-aibe-devcourse/AIBE7_FinalProject_Team3/blob/223b697783bbd712c68d359999f42ad141353802/Backend/src/test/java/org/example/grab/domain/auth/repository/RefreshTokenRotationIntegrationTest.java">통합 테스트</a><a href="https://github.com/prgrms-aibe-devcourse/AIBE7_FinalProject_Team3/pull/101">PR #101</a></div></footer>
+</section>
+
+
+
+<section id="grab-responsibilities" class="document-section" aria-labelledby="grab-responsibilities-title"><header class="section-header"><h3 id="grab-responsibilities-title">담당 업무 상세</h3></header><details class="supporting-details"><summary>구현한 기능과 환경 구성</summary><div class="details-body">
+<ul class="detail-list"><li><strong class="item-label">인증·세션:</strong> HttpOnly 쿠키 기반 JWT 인증과 CSRF·CORS 정책, Redis Lua 기반 Refresh Token 교체와 세션 관리(로그인, 재발급, 로그아웃)</li><li><strong class="item-label">회원가입·회원 정보:</strong> 이메일 인증 회원가입, 카카오·구글 OIDC 로그인, 내 정보·프로필 이미지 API와 프론트엔드 연동</li><li><strong class="item-label">성능 측정 및 개선:</strong> k6 로그인·인증 API 부하 측정, Argon2 동시 실행 제한, 회원 ID 변환 캐시와 조회 트랜잭션 개선, 전후 재측정</li><li><strong class="item-label">환경 구성:</strong> Docker Compose 개발 환경, GHCR 이미지 배포 워크플로, 인증 API 명세</li></ul>
+</div></details></section><section id="grab-other-work" class="document-section" aria-labelledby="grab-other-work-title"><header class="section-header"><h3 id="grab-other-work-title">그 밖의 구현</h3></header><details class="supporting-details"><summary>추가 기능과 근거 보기</summary><div class="details-body">
+<ul class="detail-list"><li><strong class="item-label">이메일 인증 무차별 대입 방지:</strong> 코드를 비교하기 전에 Redis <code>INCR</code>로 시도 횟수를 올려, 틀린 코드를 동시에 보내도 비교는 5번만 일어나게 했습니다. (<a href="https://github.com/prgrms-aibe-devcourse/AIBE7_FinalProject_Team3/blob/223b697783bbd712c68d359999f42ad141353802/Backend/src/main/java/org/example/grab/domain/user/service/EmailVerificationService.java">코드</a>, <a href="https://github.com/prgrms-aibe-devcourse/AIBE7_FinalProject_Team3/pull/63">PR #63</a>)</li><li><strong class="item-label">카카오·구글 OIDC 로그인:</strong> PKCE·state·nonce를 적용하고 제공자 식별자로만 회원을 찾아, 같은 이메일의 다른 계정과 자동으로 연결되지 않게 했습니다. (<a href="https://github.com/prgrms-aibe-devcourse/AIBE7_FinalProject_Team3/blob/223b697783bbd712c68d359999f42ad141353802/Backend/src/main/java/org/example/grab/domain/auth/support/oauth2/SocialAuthorizationRequestResolver.java">코드</a>, <a href="https://github.com/prgrms-aibe-devcourse/AIBE7_FinalProject_Team3/pull/126">PR #126</a>)</li><li><strong class="item-label">프로필 이미지 정합성:</strong> 이전 이미지는 DB 커밋 뒤에만 지워, 롤백돼도 DB가 없는 파일을 가리키지 않게 했습니다. (<a href="https://github.com/prgrms-aibe-devcourse/AIBE7_FinalProject_Team3/blob/223b697783bbd712c68d359999f42ad141353802/Backend/src/main/java/org/example/grab/domain/user/service/ProfileImageCleanupListener.java">코드</a>, <a href="https://github.com/prgrms-aibe-devcourse/AIBE7_FinalProject_Team3/pull/163">PR #163</a>)</li></ul>
+</div></details></section></div>
+</article>
+<article id="majuhankki" class="project project--majuhankki" aria-labelledby="majuhankki-title">
+<header class="hero">
+    <h2 id="majuhankki-title"><img class="project-logo" src="assets/majuhankki-wordmark.png" alt="마주한끼" width="1603" height="461" decoding="async"></h2>
+    <p class="lead">지역·시간·식사 취향·대화 성향을 바탕으로 밥친구를 연결하는 실시간 1:1 매칭 서비스입니다. 후보 제안에 양쪽이 수락하면 매칭과 채팅방이 만들어집니다.</p>
+  <dl class="project-facts">
+<div class="fact-row"><dt>기간 · 인원</dt><dd>2026.08.21 ~ 2026.09.03 (2주) · 2명</dd></div>
+<div class="fact-row"><dt>담당</dt><dd>실시간 매칭 전 과정 (요청, 후보 탐색, 제안, 확정, DB–Valkey 정합성), 인증·보안 기반, 성향 설문, 후기, 초기 환경 구성</dd></div>
+<div class="fact-row"><dt>기술</dt><dd><ul class="tech-list" aria-label="사용 기술"><li>Java 17</li><li>Spring Boot 4</li><li>Spring Security</li><li>JPA</li><li>PostgreSQL (PostGIS, pgvector)</li><li>Valkey</li><li>WebSocket(STOMP)</li><li>Spring AI</li><li>Docker</li></ul></dd></div>
+<div class="fact-row"><dt>저장소</dt><dd><a href="https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04">GitHub</a></dd></div>
+</dl></header>
+  <section class="highlights" aria-labelledby="majuhankki-highlights-title">
+    <h3 id="majuhankki-highlights-title" class="summary-heading">핵심 구현·검증</h3>
+    <div class="metric-grid two-up">
+<article class="metric-card"><h4>실시간 매칭</h4><p class="metric case-label">600회 검증</p><p class="metric-copy">매칭 확정 경로의 잠금 순서를 <strong>제안 → 요청 ID 오름차순</strong>으로 통일했습니다. 프로젝트 종료 후 실제 PostgreSQL 경합 6종을 각 100회, <strong>총 600회 검증해 중복 매칭·상태 불일치·데드락·타임아웃 0건</strong>을 확인했습니다.</p><a href="#majuhankki-matching-concurrency" class="metric-link">사례 01 보기</a></article>
+<article class="metric-card"><h4>PostgreSQL · Valkey</h4><p class="metric case-label">205건 보정</p><p class="metric-copy">PostgreSQL을 기준으로 누락된 Valkey 대기 정보를 복구하거나 요청을 만료시킵니다. 프로젝트 종료 후 실제 Valkey 재시작으로 정보를 유실시킨 <strong>205건을 복구 102건·만료 103건으로 처리해 미처리 0건</strong>을 확인했습니다.</p><a href="#majuhankki-waiting-reconciliation" class="metric-link">사례 02 보기</a></article>
+</div></section>
+<div class="document">
+<section id="majuhankki-overview" class="document-section" aria-labelledby="majuhankki-overview-title"><header class="section-header"><h3 id="majuhankki-overview-title">전체 서비스 구성</h3></header><details class="supporting-details"><summary>시스템 아키텍처 보기</summary><div class="details-body">
+
+
+
+<figure class="architecture-figure" aria-labelledby="majuhankki-overview-title">
+<div class="architecture-preview"><img src="assets/majuhankki-architecture.svg" alt="브라우저가 REST와 SockJS·STOMP로 Render의 Spring Boot에 연결되며, 백엔드는 PostgreSQL·Valkey·Supabase Storage와 Kakao·Gemini 등 외부 서비스·검증 도구에 연결됩니다." width="1280" height="720" decoding="async"></div>
+</figure>
+</div></details></section>
+
+<section id="majuhankki-matching-concurrency" class="document-section case-study" aria-labelledby="majuhankki-matching-concurrency-title"><header class="section-header"><p class="section-kicker">핵심 사례 01</p>
+<h3 id="majuhankki-matching-concurrency-title">수락·취소가 겹쳐도 매칭이 한 번만 확정되도록 제어</h3></header>
+<h4 class="block-label">위험</h4>
+<p>두 사람이 동시에 수락하거나 수락과 취소·만료가 겹쳐도, 매칭 결과가 한 번만 확정되어야 했습니다. 한쪽의 결정이 덮어써지거나 같은 요청이 두 매칭에 사용되는 상황을 설계 단계에서 예상하고 대비했습니다.</p>
+<h4 class="block-label">설계</h4>
+<ul class="detail-list">
+<li><strong class="item-label">잠금 순서 통일:</strong> 모든 확정 경로가 제안 행을 먼저 잠그고, 두 요청 행을 ID 오름차순으로 <code>PESSIMISTIC_WRITE</code> 잠급니다. 요청에서 출발하는 대기 취소도 제안 경로로 넘겨 같은 순서를 따릅니다. 잠근 뒤에는 엔티티를 다시 읽어 최신 상태로 판정합니다.</li>
+<li><strong class="item-label">한 트랜잭션과 DB 제약:</strong> 양쪽이 수락하면 매칭, 참여자 2명, 채팅방을 한 트랜잭션에서 만듭니다. 매칭 테이블에는 요청 쌍과 각 요청에 UNIQUE 제약을 두었습니다.</li>
+<li><strong class="item-label">충돌 응답과 화면 복구:</strong> 같은 결정을 다시 보내면 기존 결과를 돌려줍니다. 이미 종료·만료된 제안이거나 잠금·제약 충돌이 나면 409로 응답하고, 화면은 현재 제안을 닫은 뒤 요청·제안·최근 결과를 다시 조회해 서버 상태에 맞춥니다.</li>
+</ul>
+<h4 class="block-label">검증과 결과 (2026-11-05, 프로젝트 종료 후)</h4>
+<p>실제 PostgreSQL의 독립 트랜잭션 두 개를 경쟁시키는 6개 시나리오를 각각 100회 실행했습니다. 각 반복 후 매칭·참여자·채팅방 수와 요청·제안 상태를 검사했습니다.</p>
+
+<p><strong>결과:</strong> 600회에서 중복 매칭·상태 불일치·데드락·타임아웃과 예상하지 못한 작업 오류가 모두 0건이었습니다.</p>
+<p>검증 조건과 범위: Windows의 로컬 Docker 환경(PostgreSQL 17.10), DB 연결 풀 최대 3개, 작업 스레드 2개로 실행했습니다. <strong>600회는 시나리오 반복 횟수</strong>이며 동시 접속자 수가 아닙니다. 서비스 계층의 DB 정합성 검증으로 캐시와 WebSocket은 mock을 사용했습니다. 수락·만료 경합은 이미 기한이 지난 제안에서 확인했으며, 수락 완료와 만료 경계의 모든 순서나 HTTP 409 응답·화면 갱신까지 검증한 것은 아닙니다.</p>
+<p>검증 자료: <a href="https://github.com/ImJhoon/majuhankki/blob/ee7d2ba113e892bb92dd693223dcfc58d3acb95b/performance/%EB%A7%A4%EC%B9%AD_%EC%8B%A0%EB%A2%B0%EC%84%B1_%EA%B2%80%EC%A6%9D_%EA%B2%B0%EA%B3%BC.md">측정 보고서</a>, <a href="https://github.com/ImJhoon/majuhankki/blob/ee7d2ba113e892bb92dd693223dcfc58d3acb95b/src/test/java/org/example/project2/domain/matching/service/proposal/MatchProposalConcurrencyIntegrationTest.java">600회 동시성 테스트</a>, <a href="https://github.com/ImJhoon/majuhankki/blob/ee7d2ba113e892bb92dd693223dcfc58d3acb95b/performance/run-reliability.ps1">실행 스크립트</a></p>
+<h4 class="block-label">한계와 다음 단계</h4>
+<p>잠금 대기 시간 상한(lock timeout)을 설정하지 않아, 잠금을 쥔 트랜잭션이 길어지면 기다리는 요청도 함께 묶입니다. 대기 상한과 그때의 실패 응답을 정하는 것이 다음 과제입니다.</p>
+<details class="supporting-details"><summary>경로별 잠금 순서</summary><div class="details-body"><h4 class="block-label">경로별 잠금 순서</h4>
+<div class="table-wrapper" tabindex="0" role="region" aria-labelledby="majuhankki-matching-concurrency-table"><table><caption class="sr-only" id="majuhankki-matching-concurrency-table">경로별 잠금 순서</caption><thead><tr><th scope="col">경로</th><th scope="col">시작</th><th scope="col">잠금 순서</th></tr></thead><tbody>
+<tr><td>후보 제안 생성</td><td>후보 탐색</td><td>두 요청 (ID 오름차순)</td></tr>
+<tr><td>수락·거절</td><td>사용자 응답</td><td>제안 → 두 요청 (ID 오름차순)</td></tr>
+<tr><td>만료</td><td>스케줄러</td><td>제안 → 두 요청 (ID 오름차순)</td></tr>
+<tr><td>대기 취소 (제안 있음)</td><td>사용자 취소</td><td>제안 → 두 요청 (ID 오름차순)</td></tr>
+<tr><td>대기 취소 (제안 없음)</td><td>사용자 취소</td><td>요청 하나, 잠근 뒤 제안 생성 여부 재확인</td></tr>
+</tbody></table></div>
+</div></details><details class="supporting-details"><summary>잠금 방식 비교 · 사후 설계 분석</summary><div class="details-body"><h4 class="block-label">잠금 방식 비교 · 사후 분석</h4>
+<div class="table-wrapper" tabindex="0" role="region" aria-labelledby="majuhankki-lock-choice-table"><table><caption class="sr-only" id="majuhankki-lock-choice-table">잠금 방식 비교</caption><thead><tr><th scope="col">방식</th><th scope="col">이 흐름에서의 장점</th><th scope="col">비용·한계</th></tr></thead><tbody>
+<tr><td>비관적 락 (적용)</td><td>경쟁 범위가 제안 1건과 요청 2건으로 좁습니다. 뒤에 온 요청은 앞선 트랜잭션이 끝날 때까지 기다린 뒤 확정된 상태를 다시 읽고, 기존 결과를 돌려줄지 409로 응답할지 바로 판단합니다.</td><td>잠금 대기가 생깁니다. 경로마다 잠금 순서가 다르면 교착이 생길 수 있어 모든 경로의 순서를 맞춰야 합니다.</td></tr>
+<tr><td>낙관적 락 (<code>@Version</code>)</td><td>대기 없이 진행하고 충돌을 커밋 시점에 감지합니다.</td><td>충돌에서 진 쪽이 어떤 응답을 받아야 하는지 알려면 다시 읽고 재시도하는 경로가 필요합니다. 만료 스케줄러에도 같은 처리가 필요합니다.</td></tr>
+<tr><td>Valkey 분산 락</td><td>DB 밖에서 여러 서버의 진입을 막을 수 있습니다.</td><td>상태와 제약은 PostgreSQL에 있어 락 해제와 DB 커밋 시점을 따로 맞춰야 하고, 락 TTL이 트랜잭션보다 먼저 끝날 수 있습니다. 매칭 확정이 Valkey 가용성에도 의존하게 됩니다.</td></tr>
+</tbody></table></div>
+</div></details><details class="supporting-details"><summary>잠금 제거 비교 실험 · 2026-10-31</summary><div class="details-body"><h4 class="block-label">이전 검증: 잠금 제거 비교 (2026-10-31)</h4>
+<p>잠금의 효과를 확인하기 위해 기존 구현과 잠금을 제거한 버전을 비교했습니다. 각 회차는 6개 시나리오 묶음이며, 600회 반복 검증과 별도로 수행했습니다.</p>
+<div class="table-wrapper" tabindex="0" role="region" aria-labelledby="majuhankki-concurrency-verification-table"><table><caption class="sr-only" id="majuhankki-concurrency-verification-table">이전 잠금 제거 비교 결과</caption><thead><tr><th scope="col">조건</th><th scope="col">실행</th><th scope="col">결과</th></tr></thead><tbody>
+<tr><td>기준 코드</td><td>21회</td><td>21회 모두 6개 시나리오 통과</td></tr>
+<tr><td>제안 행 잠금만 제거</td><td>10회</td><td>10회 모두 실패. 동시 수락에서 한쪽 결정이 덮어써져 매칭이 만들어지지 않고 제안이 <code>PENDING</code>에 멈췄습니다. 일부 실행에서는 거절·취소도 유실됐습니다.</td></tr>
+<tr><td>제안·요청 잠금 모두 제거</td><td>10회</td><td>10회 모두 실패. 결정 유실에 더해 같은 제안의 매칭을 두 번 저장하려는 시도(4회)와 한 요청을 두 매칭에 쓰려는 시도(10회)가 생겼고, 매칭 테이블의 UNIQUE 제약이 이를 거부했습니다.</td></tr>
+</tbody></table></div>
+<p>이전 검증 조건과 범위: 2026-10-31 로컬 Docker 환경(PostgreSQL 16)에서 6개 시나리오 묶음을 21회 실행하고, 잠금을 제거한 두 버전을 각각 10회 실행했습니다. Valkey·WebSocket은 mock이며 HTTP 409 변환과 화면 재조회는 코드로 확인했습니다. 이 이전 테스트의 작성과 실행에는 Claude Code를 활용했습니다.</p>
+</div></details><details class="supporting-details"><summary>동시성 검증 6개 시나리오</summary><div class="details-body"><div class="table-wrapper" tabindex="0" role="region" aria-labelledby="majuhankki-concurrency-results-600"><table><caption class="sr-only" id="majuhankki-concurrency-results-600">최신 동시성 검증 결과</caption><thead><tr><th scope="col">시나리오</th><th scope="col">실행</th><th scope="col">성공</th></tr></thead><tbody>
+<tr><td>양쪽 사용자 동시 수락</td><td>100회</td><td>100회</td></tr>
+<tr><td>매칭 후 동일 수락 중복 재시도</td><td>100회</td><td>100회</td></tr>
+<tr><td>하나의 요청을 공유하는 경쟁 제안</td><td>100회</td><td>100회</td></tr>
+<tr><td>수락·거절 경합</td><td>100회</td><td>100회</td></tr>
+<tr><td>수락·취소 경합</td><td>100회</td><td>100회</td></tr>
+<tr><td>수락·만료 처리 경합</td><td>100회</td><td>100회</td></tr>
+<tr><td><strong>합계</strong></td><td><strong>600회</strong></td><td><strong>600회</strong></td></tr>
+</tbody></table></div></div></details><footer class="sources"><h4>근거 자료</h4><div class="source-links"><a href="https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/blob/310120e7ba6de85c372a028935fa2b07c1621c94/src/main/java/org/example/project2/domain/matching/service/proposal/MatchProposalLifecycleService.java">MatchProposalLifecycleService</a><a href="https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/blob/310120e7ba6de85c372a028935fa2b07c1621c94/src/main/java/org/example/project2/domain/matching/service/request/RealtimeMatchRequestService.java">요청 잠금·취소 경로</a><a href="https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/blob/310120e7ba6de85c372a028935fa2b07c1621c94/src/main/java/org/example/project2/domain/matching/entity/Match.java">DB 제약</a><a href="https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/blob/310120e7ba6de85c372a028935fa2b07c1621c94/src/main/java/org/example/project2/domain/matching/service/proposal/MatchProposalInteractionService.java">충돌 응답 변환</a><a href="https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/blob/310120e7ba6de85c372a028935fa2b07c1621c94/frontend/src/pages/matching-request.js#L592-L634">409 처리 화면</a><a href="https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/blob/310120e7ba6de85c372a028935fa2b07c1621c94/src/test/java/org/example/project2/domain/matching/service/proposal/MatchProposalConcurrencyIntegrationTest.java">동시성 통합 테스트</a><a href="https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/pull/46">PR #46</a><a href="https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/pull/50">PR #50</a></div></footer>
+</section>
+<section id="majuhankki-waiting-reconciliation" class="document-section case-study" aria-labelledby="majuhankki-waiting-reconciliation-title"><header class="section-header"><p class="section-kicker">핵심 사례 02</p>
+<h3 id="majuhankki-waiting-reconciliation-title">사라진 대기 정보를 DB 기록으로 복구</h3></header>
+<h4 class="block-label">문제와 제약</h4>
+<p>DB에는 대기 중으로 남아 있는데 Valkey의 대기 정보가 사라지면, 해당 요청이 후보 탐색에서 누락될 수 있습니다. PostgreSQL과 Valkey를 함께 커밋할 수 없어, 불일치가 생겼을 때 어느 기록을 기준으로 복구할지 정해야 했습니다.</p>
+<h4 class="block-label">설계 특성</h4>
+<p>요청·제안·매칭은 채팅방과 후기가 참조하는 기록이며, 사례 ①의 행 잠금과 트랜잭션으로 상태 전이를 보호합니다. 반면 Valkey 대기 키는 TTL로 사라지는 것을 전제로 둔 값입니다. 그래서 두 저장소가 어긋나면 PostgreSQL을 기준으로 Valkey를 맞춥니다. 잠시 어긋날 수 있다는 비용은 남기고, 보정 작업으로 그 시간을 줄이는 구조입니다.</p>
+<h4 class="block-label">설계와 구현</h4>
+<ul class="detail-list">
+<li><strong class="item-label">역할 분리:</strong> PostgreSQL은 요청·제안·매칭을 보존하고, Valkey는 사용자별 중복 진입 방지와 TTL 5분의 대기 상태를 맡습니다.</li>
+<li><strong class="item-label">최초 등록과 롤백 보상:</strong> <code>SET NX</code>와 예약 토큰으로 사용자 키를 선점한 뒤 DB에 요청을 저장하고, DB 커밋 전에 Lua로 대기 키와 위치 등록을 함께 활성화합니다. DB가 롤백되면 요청 ID가 일치하는 키만 정리하고, 예약 해제도 토큰이 같을 때만 수행해 다른 요청의 키를 지우지 않습니다.</li>
+<li><strong class="item-label">커밋 후 반영:</strong> 제안 생성·확정·취소·대기 복귀에 따른 Valkey 갱신과 매칭 결과 WebSocket 알림은 DB 커밋 뒤에 수행합니다. 이 단계에서 Valkey 반영이 실패해도 이미 커밋된 DB 상태는 되돌리지 않습니다.</li>
+<li><strong class="item-label">대기 요청 보정:</strong> 5초 간격의 작업이 DB의 <code>WAITING</code> 요청을 100건씩 순회합니다. 요청마다 별도 트랜잭션에서 행을 잠근 뒤 아래 표에 따라 처리합니다.</li>
+</ul>
+<div class="table-wrapper" tabindex="0" role="region" aria-labelledby="majuhankki-waiting-reconciliation-table"><table><caption class="sr-only" id="majuhankki-waiting-reconciliation-table">DB와 Valkey 상태별 처리</caption><thead><tr><th scope="col">상태</th><th scope="col">처리</th></tr></thead><tbody>
+<tr><td>최초 대기 등록 뒤 DB 롤백</td><td>요청 ID가 일치하는 Valkey 키 정리 시도</td></tr>
+<tr><td>DB는 <code>WAITING</code>, 대기 키 누락, 대기 시간 남음</td><td>남은 TTL로 대기 키와 위치 등록 복구</td></tr>
+<tr><td>DB는 <code>WAITING</code>, 대기 키 누락, 대기 시간 경과</td><td>DB 요청 만료 후 Valkey 정리</td></tr>
+<tr><td>Valkey 조회 실패</td><td>DB 상태를 유지하고 다음 순회에서 재시도</td></tr>
+</tbody></table></div>
+<h4 class="block-label">검증과 결과 (2026-11-05, 프로젝트 종료 후)</h4>
+<p>실제 PostgreSQL·Valkey를 사용해 대기 정보 삭제, TTL 만료, 컨테이너 중단·재시작과 반복 보정을 검증했습니다. 시나리오별로 대기 요청 205건과 비대기 비교 요청 4건을 만들었습니다.</p>
+<div class="table-wrapper" tabindex="0" role="region" aria-labelledby="majuhankki-waiting-recovery-verification-table"><table><caption class="sr-only" id="majuhankki-waiting-recovery-verification-table">실제 Valkey 상태 복구 결과</caption><thead><tr><th scope="col">상황</th><th scope="col">대기 대상</th><th scope="col">복구</th><th scope="col">만료</th><th scope="col">미처리·보류</th></tr></thead><tbody>
+<tr><td>대기 키 삭제 후 보정</td><td>205건</td><td>205건</td><td>0건</td><td>0건</td></tr>
+<tr><td>Valkey TTL 만료·DB 대기 시간 경과 후 보정</td><td>205건</td><td>0건</td><td>205건</td><td>0건</td></tr>
+<tr><td>Valkey 중단 중 보정</td><td>205건</td><td>0건</td><td>0건</td><td>205건</td></tr>
+<tr><td><strong>Valkey 재시작 후 보정</strong></td><td><strong>205건</strong></td><td><strong>102건</strong></td><td><strong>103건</strong></td><td><strong>0건</strong></td></tr>
+</tbody></table></div>
+
+
+<p>검증 자료: <a href="https://github.com/ImJhoon/majuhankki/blob/ee7d2ba113e892bb92dd693223dcfc58d3acb95b/performance/%EB%A7%A4%EC%B9%AD_%EC%8B%A0%EB%A2%B0%EC%84%B1_%EA%B2%80%EC%A6%9D_%EA%B2%B0%EA%B3%BC.md">측정 보고서</a>, <a href="https://github.com/ImJhoon/majuhankki/blob/ee7d2ba113e892bb92dd693223dcfc58d3acb95b/src/test/java/org/example/project2/domain/matching/service/request/RealtimeMatchWaitingRecoveryIntegrationTest.java">실제 Valkey 복구 테스트</a>, <a href="https://github.com/ImJhoon/majuhankki/blob/ee7d2ba113e892bb92dd693223dcfc58d3acb95b/performance/run-reliability.ps1">실행 스크립트</a></p>
+<h4 class="block-label">한계와 다음 단계</h4>
+<p>두 저장소를 함께 커밋하지 않으므로 일시적인 불일치는 남고, 순회량과 장애 지속 시간에 따라 복구가 5초보다 늦어질 수 있습니다. 보정 대상은 <code>WAITING</code> 요청의 누락된 키입니다. 종료된 요청의 잔여 키는 TTL과 만료된 위치 등록 정리에 맡기며, WebSocket 알림 유실은 보정 범위에 포함되지 않습니다.</p>
+<p class="scope-note">프로젝트 종료 후 로컬 Docker의 실제 PostgreSQL·Valkey에서 검증했습니다. 시나리오별 1회 측정이며 보정 메서드를 직접 호출했습니다. 실제 스케줄러의 복구 시간과 WebSocket 알림 전달은 검증하지 않았습니다.</p><details class="supporting-details"><summary>배치 반복 결과와 복구 검증 조건</summary><div class="details-body"><p>누락 정보 복구와 만료 처리는 <strong>100 → 100 → 5건</strong>의 배치로 전체 요청을 순회했습니다. 장애 중에는 205건의 DB 상태·수정 시각을 유지하고, 재시작 후 남은 대기 시간이 있는 102건을 복구하고 시간이 지난 103건을 만료 처리했습니다. 별도 반복 보정 실험에서는 전체 205건을 최초 복구한 뒤 배치를 9회 더 호출해, 전체 요청을 3차례 더 순회해도 신규 보정 0건과 기존 만료 시각·DB 수정 시각이 유지됨을 확인했습니다.</p><p>검증 조건과 범위: Windows의 로컬 Docker 환경(PostgreSQL 17.10·Valkey 8.1.9), 명령 타임아웃 200ms에서 실행했습니다. 스케줄러 초기 지연을 1시간으로 설정하고 보정 메서드를 직접 호출했습니다. DB 대기 시간 경과는 기록 시각을 301초 이전으로 설정하고 Valkey 키는 실제 2초 TTL로 만료시켰습니다. 검증 버전에는 Redis 명령 타임아웃 설정을 Lettuce에 반영한 수정이 포함됩니다. 각 복구 시나리오는 1회 측정한 결과로, 운영 환경의 복구 시간이나 WebSocket 알림 전달까지 보장하지 않습니다.</p></div></details><footer class="sources"><h4>근거 자료</h4><div class="source-links"><a href="https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/blob/310120e7ba6de85c372a028935fa2b07c1621c94/src/main/java/org/example/project2/domain/matching/service/request/RealtimeMatchRequestService.java">최초 등록·롤백 보상</a><a href="https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/blob/310120e7ba6de85c372a028935fa2b07c1621c94/src/main/java/org/example/project2/domain/matching/repository/RedisRealtimeMatchWaitingStore.java">Valkey 대기 저장소·Lua</a><a href="https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/blob/310120e7ba6de85c372a028935fa2b07c1621c94/src/main/java/org/example/project2/domain/matching/service/request/RealtimeMatchRedisLifecycleService.java">커밋 후 반영</a><a href="https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/blob/310120e7ba6de85c372a028935fa2b07c1621c94/src/main/java/org/example/project2/domain/matching/service/request/RealtimeMatchWaitingReconciliationService.java">보정 스케줄러</a><a href="https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/blob/310120e7ba6de85c372a028935fa2b07c1621c94/src/main/java/org/example/project2/domain/matching/service/request/RealtimeMatchWaitingRepairService.java">요청별 복구 판단</a><a href="https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/blob/310120e7ba6de85c372a028935fa2b07c1621c94/src/main/java/org/example/project2/domain/matching/service/proposal/MatchResultCreatedEventHandler.java">매칭 결과 알림</a><a href="https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/pull/44">PR #44</a><a href="https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/pull/46">PR #46</a></div></footer>
+</section>
+
+<section id="majuhankki-responsibilities" class="document-section" aria-labelledby="majuhankki-responsibilities-title"><header class="section-header"><h3 id="majuhankki-responsibilities-title">담당 업무 상세</h3></header><details class="supporting-details"><summary>구현한 기능과 환경 구성</summary><div class="details-body">
+<ul class="detail-list">
+<li><strong class="item-label">실시간 매칭:</strong> 매칭 요청·취소, PostGIS 양방향 반경 후보 탐색, 후보 제안과 수락·거절, 매칭·채팅방 생성, Valkey 대기 상태와 보정 작업 (<a href="https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/pull/44">PR #44</a>, <a href="https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/pull/46">#46</a>, <a href="https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/pull/50">#50</a>)</li>
+<li><strong class="item-label">인증·보안 기반:</strong> Spring Security 설정, CSRF, Refresh Token 해시 저장·회전·재사용 탐지, 카카오 OAuth 로그인과 일회성 교환 코드 (<a href="https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/pull/19">PR #19</a>, <a href="https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/pull/24">#24</a>, <a href="https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/pull/26">#26</a>, <a href="https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/pull/33">#33</a>)</li>
+<li><strong class="item-label">성향·후기:</strong> 식사·대화 성향 설문, 후기 작성과 다시한끼 지수 산식 (<a href="https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/pull/34">PR #34</a>, <a href="https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/pull/61">#61</a>)</li>
+<li><strong class="item-label">환경 구성:</strong> 초기 프로젝트·도메인 구조, 환경변수 구성, Prometheus·Grafana 매칭 지표, 배포용 Dockerfile (<a href="https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/pull/55">PR #55</a>, <a href="https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/pull/64">#64</a>)</li>
+</ul>
+</div></details></section><section id="majuhankki-other-work" class="document-section" aria-labelledby="majuhankki-other-work-title"><header class="section-header"><h3 id="majuhankki-other-work-title">그 밖의 구현</h3></header><details class="supporting-details"><summary>추가 기능과 근거 보기</summary><div class="details-body">
+<ul class="detail-list">
+<li><strong class="item-label">양방향 조건 기반 후보 선정:</strong> 두 사람 각각의 탐색 반경(PostGIS <code>ST_DWithin</code>)과 식사 시간 30분 이내 조건을 먼저 확인한 뒤 성향 점수를 계산했습니다. 태그와 자유 서술 임베딩 점수를 80:20으로 결합하고, 제안 시점의 양방향 점수·근거·산식 버전을 함께 저장했습니다. 본인은 양방향 점수 중 낮은 값을 기준으로 후보를 정렬하도록 구현했습니다. 후속 후보 선정 변경은 팀원 작업입니다. (<a href="https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/blob/310120e7ba6de85c372a028935fa2b07c1621c94/src/main/java/org/example/project2/domain/matching/service/candidate/BidirectionalCandidateSearchService.java">양방향 조건 필터</a>, <a href="https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/blob/bfa2ab3198ec0638df3785c6fb122299af561d28/src/main/java/org/example/project2/domain/matching/service/proposal/MatchProposalSelectionService.java">본인 구현 시점의 후보 선정</a>, <a href="https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/pull/55">PR #55</a>, <a href="https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/pull/74">후속 팀 변경 #74</a>)</li>
+<li><strong class="item-label">후기 작성 정책과 다시한끼 지수:</strong> 완료된 매칭의 활성 참여자만 종료 후 7일 안에 상대에게 후기를 작성할 수 있게 했습니다. 사전 중복 조회와 DB UNIQUE 제약을 함께 사용하고, 저장 시 제약 충돌을 중복 후기 응답으로 변환합니다. 지수는 <code>(2.5 + 확실히 다시 + 0.5 × 아마도 다시) / (5 + 유효 후기 수) × 100</code>으로 계산하며 산식 버전을 관리합니다. 수식상 가상 후기 5건을 반영해 소수 후기의 점수 영향을 완화합니다. (<a href="https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/blob/310120e7ba6de85c372a028935fa2b07c1621c94/src/main/java/org/example/project2/domain/review/service/ReviewCommandService.java">후기 작성</a>, <a href="https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/blob/310120e7ba6de85c372a028935fa2b07c1621c94/src/main/java/org/example/project2/domain/review/service/ReviewScorePolicy.java">지수 산식</a>, <a href="https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/pull/61">PR #61</a>)</li>
+<li><strong class="item-label">OAuth 일회성 교환 코드:</strong> OAuth 로그인 결과를 토큰으로 교환하는 코드의 해시를 Valkey 키로 저장하고, 유효 기간을 2분으로 제한했습니다. 교환 시 <code>GETDEL</code>로 조회와 삭제를 한 번에 수행하며, 코드를 소비한 뒤 활성 회원인지 확인하고 토큰을 발급합니다. (<a href="https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/blob/310120e7ba6de85c372a028935fa2b07c1621c94/src/main/java/org/example/project2/domain/auth/service/oauth/OAuthAuthorizationCodeService.java">교환 코드</a>, <a href="https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/blob/310120e7ba6de85c372a028935fa2b07c1621c94/src/main/java/org/example/project2/domain/auth/service/oauth/OAuthTokenExchangeService.java">토큰 교환</a>, <a href="https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/pull/24">PR #24</a>)</li>
+</ul>
+</div></details></section></div>
+</article>
+</main>
+<footer class="page-footer shell"><span>한재훈 · 백엔드 포트폴리오</span><a href="#top">맨 위로</a></footer>
+<script>
+(()=>{let saved=[];addEventListener('beforeprint',()=>{saved=[...document.querySelectorAll('details')].map(n=>[n,n.open]);saved.forEach(([n])=>n.open=true)});addEventListener('afterprint',()=>saved.forEach(([n,open])=>n.open=open))})();
+</script></body>
+</html>

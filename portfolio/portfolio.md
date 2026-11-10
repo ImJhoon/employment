@@ -72,7 +72,7 @@ VU 40 조건에서 Full GC 직후 힙은 **422MiB에서 124MiB로**, 관측 최�
 
 반복 부하 VU 80의 개선 후 측정에서는 대기 한도 초과로 98건(11.6%)을 거절했습니다. 동시 실행 제한은 과부하 시 일부 요청을 거절하는 비용이 있습니다.
 
-근거: [ConcurrencyLimitedPasswordEncoder](https://github.com/prgrms-aibe-devcourse/AIBE7_FinalProject_Team3/blob/feat/GR-178-limit-argon2-concurrency/Backend/src/main/java/org/example/grab/global/security/password/ConcurrencyLimitedPasswordEncoder.java), [개선 전 측정](https://github.com/prgrms-aibe-devcourse/AIBE7_FinalProject_Team3/blob/feat/GR-178-limit-argon2-concurrency/Backend/k6/login-burst/result.md), [개선 후 측정](https://github.com/prgrms-aibe-devcourse/AIBE7_FinalProject_Team3/blob/feat/GR-178-limit-argon2-concurrency/Backend/k6/login-burst/result-gr178.md)
+근거: [ConcurrencyLimitedPasswordEncoder](https://github.com/prgrms-aibe-devcourse/AIBE7_FinalProject_Team3/blob/8d82e61091fb3ac2b7a4a6bc21ea81233619086b/Backend/src/main/java/org/example/grab/global/security/password/ConcurrencyLimitedPasswordEncoder.java), [개선 전 측정](https://github.com/prgrms-aibe-devcourse/AIBE7_FinalProject_Team3/blob/8d82e61091fb3ac2b7a4a6bc21ea81233619086b/Backend/k6/login-burst/result.md), [개선 후 측정](https://github.com/prgrms-aibe-devcourse/AIBE7_FinalProject_Team3/blob/8d82e61091fb3ac2b7a4a6bc21ea81233619086b/Backend/k6/login-burst/result-gr178.md)
 
 ---
 
@@ -216,57 +216,25 @@ flowchart TB
 - **한 트랜잭션과 DB 제약:** 양쪽이 수락하면 매칭, 참여자 2명, 채팅방을 한 트랜잭션에서 만듭니다. 매칭 테이블에는 요청 쌍과 각 요청에 UNIQUE 제약을 두었습니다.
 - **충돌 응답과 화면 복구:** 같은 결정을 다시 보내면 기존 결과를 돌려줍니다. 이미 종료·만료된 제안이거나 잠금·제약 충돌이 나면 409로 응답하고, 화면은 현재 제안을 닫은 뒤 요청·제안·최근 결과를 다시 조회해 서버 상태에 맞춥니다.
 
-**경로별 잠금 순서**
+**매칭 확정 처리 흐름**
 
-| 경로 | 시작 | 잠금 순서 |
-| :---- | :---- | :---- |
-| 후보 제안 생성 | 후보 탐색 | 두 요청 (ID 오름차순) |
-| 수락·거절 | 사용자 응답 | 제안 → 두 요청 (ID 오름차순) |
-| 만료 | 스케줄러 | 제안 → 두 요청 (ID 오름차순) |
-| 대기 취소 (제안 있음) | 사용자 취소 | 제안 → 두 요청 (ID 오름차순) |
-| 대기 취소 (제안 없음) | 사용자 취소 | 요청 하나, 잠근 뒤 제안 생성 여부 재확인 |
+> 하나의 PostgreSQL 트랜잭션: **제안 행 잠금 → 요청 두 건을 ID 오름차순으로 잠금 → 최신 상태 확인 → 양쪽 수락 시 매칭·참여자·채팅방 생성**
+>
+> 제안이 있는 처리 경로 기준입니다. 경합 요청은 잠금이 해제된 뒤 최신 상태로 판정하며, UNIQUE 제약으로 중복 저장을 거부합니다.
 
-**선택 이유 (사후 비교 분석):** 당시 대안을 비교한 기록이 남아 있지 않아, 구현을 기준으로 다시 정리했습니다.
+**검증과 결과 (프로젝트 종료 후)**
 
-| 방식 | 이 흐름에서의 장점 | 비용·한계 |
-| :---- | :---- | :---- |
-| 비관적 락 (적용) | 경쟁 범위가 제안 1건과 요청 2건으로 좁습니다. 뒤에 온 요청은 앞선 트랜잭션이 끝날 때까지 기다린 뒤 확정된 상태를 다시 읽고, 기존 결과를 돌려줄지 409로 응답할지 바로 판단합니다. | 잠금 대기가 생깁니다. 경로마다 잠금 순서가 다르면 교착이 생길 수 있어 모든 경로의 순서를 맞춰야 합니다. |
-| 낙관적 락 (`@Version`) | 대기 없이 진행하고 충돌을 커밋 시점에 감지합니다. | 충돌에서 진 쪽이 어떤 응답을 받아야 하는지 알려면 다시 읽고 재시도하는 경로가 필요합니다. 만료 스케줄러에도 같은 처리가 필요합니다. |
-| Valkey 분산 락 | DB 밖에서 여러 서버의 진입을 막을 수 있습니다. | 상태와 제약은 PostgreSQL에 있어 락 해제와 DB 커밋 시점을 따로 맞춰야 하고, 락 TTL이 트랜잭션보다 먼저 끝날 수 있습니다. 매칭 확정이 Valkey 가용성에도 의존하게 됩니다. |
+> **6종 × 100회 = 총 600회 검증 · 중복 매칭·상태 불일치 0건**
 
-**검증과 결과 (2026-11-05, 프로젝트 종료 후)**
+프로젝트 종료 후 실제 PostgreSQL에서 양쪽 동시 수락, 동일 수락 재시도, 하나의 요청을 공유하는 경쟁 제안, 수락과 거절·취소·만료의 경합 등 6종 시나리오를 각 100회 검증했습니다. 총 600회에서 중복 매칭·상태 불일치·데드락·타임아웃과 예상하지 못한 작업 오류는 관측되지 않았습니다.
 
-개인 저장소의 검증 기준 커밋 `ee7d2ba`에서 실제 PostgreSQL의 독립 트랜잭션 두 개를 경쟁시키는 6개 시나리오를 각각 100회 실행했습니다. 각 반복이 끝나면 매칭·참여자·채팅방 수와 요청·제안 상태, 한 요청의 중복 매칭 여부를 검사했습니다.
+별도의 잠금 제거 실험에서는 제안 잠금을 제거하면 사용자 결정이 유실됐고, 요청 잠금까지 제거하면 중복 매칭 저장 시도가 발생해 UNIQUE 제약이 이를 거부했습니다. 이를 통해 상태 전이를 보호하는 잠금과 중복 저장을 거부하는 DB 제약의 역할을 확인했습니다.
 
-| 시나리오 | 실행 | 성공 |
-| :---- | :---- | :---- |
-| 양쪽 사용자 동시 수락 | 100회 | 100회 |
-| 매칭 후 동일 수락 중복 재시도 | 100회 | 100회 |
-| 하나의 요청을 공유하는 경쟁 제안 | 100회 | 100회 |
-| 수락·거절 경합 | 100회 | 100회 |
-| 수락·취소 경합 | 100회 | 100회 |
-| 수락·만료 처리 경합 | 100회 | 100회 |
-| **합계** | **600회** | **600회** |
+**검증 범위와 한계**
 
-**결과:** 600회에서 중복 매칭·상태 불일치·데드락·타임아웃과 예상하지 못한 작업 오류가 모두 0건이었습니다.
+로컬 PostgreSQL의 독립 트랜잭션 두 개를 경쟁시킨 검증이며, Valkey·WebSocket은 mock을 사용했습니다. HTTP 409 응답·화면 갱신은 검증하지 않았고, 수락·만료 경합은 이미 기한이 지난 제안에서 확인했습니다. 잠금 대기 시간 상한(lock timeout)을 설정하지 않아, 장기 트랜잭션이 있을 때 대기가 길어질 수 있습니다. 대기 상한과 실패 응답 정책은 다음 개선 과제입니다.
 
-검증 조건과 범위: Windows의 로컬 Docker 환경(PostgreSQL 17.10), DB 연결 풀 최대 3개, 작업 스레드 2개로 실행했습니다. **600회는 시나리오 반복 횟수**이며 동시 접속자 수가 아닙니다. 서비스 계층의 DB 정합성 검증으로 캐시와 WebSocket은 mock을 사용했습니다. 수락·만료 경합은 이미 기한이 지난 제안에서 확인했으며, 수락 완료와 만료 경계의 모든 순서나 HTTP 409 응답·화면 갱신까지 검증한 것은 아닙니다.
-
-최신 검증 근거: [측정 보고서](https://github.com/ImJhoon/majuhankki/blob/ee7d2ba113e892bb92dd693223dcfc58d3acb95b/performance/%EB%A7%A4%EC%B9%AD_%EC%8B%A0%EB%A2%B0%EC%84%B1_%EA%B2%80%EC%A6%9D_%EA%B2%B0%EA%B3%BC.md), [600회 동시성 테스트](https://github.com/ImJhoon/majuhankki/blob/ee7d2ba113e892bb92dd693223dcfc58d3acb95b/src/test/java/org/example/project2/domain/matching/service/proposal/MatchProposalConcurrencyIntegrationTest.java), [실행 스크립트](https://github.com/ImJhoon/majuhankki/blob/ee7d2ba113e892bb92dd693223dcfc58d3acb95b/performance/run-reliability.ps1)
-
-**이전 검증: 잠금 제거 비교 (2026-10-31)**
-
-잠금의 효과를 확인하기 위해 기존 기준 커밋 `310120e`와 잠금을 제거한 버전을 비교했습니다. 아래 결과는 최신 600회 검증과 별도로 수행한 실험입니다.
-
-| 조건 | 실행 | 결과 |
-| :---- | :---- | :---- |
-| 기준 코드 | 21회 | 21회 모두 6개 시나리오 통과 |
-| 제안 행 잠금만 제거 | 10회 | 10회 모두 실패. 동시 수락에서 한쪽 결정이 덮어써져 매칭이 만들어지지 않고 제안이 `PENDING`에 멈췄습니다. 일부 실행에서는 거절·취소도 유실됐습니다. |
-| 제안·요청 잠금 모두 제거 | 10회 | 10회 모두 실패. 결정 유실에 더해 같은 제안의 매칭을 두 번 저장하려는 시도(4회)와 한 요청을 두 매칭에 쓰려는 시도(10회)가 생겼고, 매칭 테이블의 UNIQUE 제약이 이를 거부했습니다. |
-
-이전 검증 조건과 범위: 2026-10-31 로컬 Docker 환경(PostgreSQL 16, 기준 커밋 `310120e`)에서 6개 시나리오 묶음을 21회 실행하고, 잠금을 제거한 두 버전을 각각 10회 실행했습니다. Valkey·WebSocket은 mock이며 HTTP 409 변환과 화면 재조회는 코드로 확인했습니다. 이 이전 테스트의 작성과 실행에는 Claude Code를 활용했습니다.
-
-**한계와 다음 단계:** 잠금 대기 시간 상한(lock timeout)을 설정하지 않아, 잠금을 쥔 트랜잭션이 길어지면 기다리는 요청도 함께 묶입니다. 대기 상한과 그때의 실패 응답을 정하는 것이 다음 과제입니다.
+검증 자료: [측정 보고서](https://github.com/ImJhoon/majuhankki/blob/ee7d2ba113e892bb92dd693223dcfc58d3acb95b/performance/%EB%A7%A4%EC%B9%AD_%EC%8B%A0%EB%A2%B0%EC%84%B1_%EA%B2%80%EC%A6%9D_%EA%B2%B0%EA%B3%BC.md), [600회 동시성 테스트](https://github.com/ImJhoon/majuhankki/blob/ee7d2ba113e892bb92dd693223dcfc58d3acb95b/src/test/java/org/example/project2/domain/matching/service/proposal/MatchProposalConcurrencyIntegrationTest.java), [실행 스크립트](https://github.com/ImJhoon/majuhankki/blob/ee7d2ba113e892bb92dd693223dcfc58d3acb95b/performance/run-reliability.ps1)
 
 근거: [MatchProposalLifecycleService](https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/blob/310120e7ba6de85c372a028935fa2b07c1621c94/src/main/java/org/example/project2/domain/matching/service/proposal/MatchProposalLifecycleService.java), [요청 잠금·취소 경로](https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/blob/310120e7ba6de85c372a028935fa2b07c1621c94/src/main/java/org/example/project2/domain/matching/service/request/RealtimeMatchRequestService.java), [DB 제약](https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/blob/310120e7ba6de85c372a028935fa2b07c1621c94/src/main/java/org/example/project2/domain/matching/entity/Match.java), [충돌 응답 변환](https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/blob/310120e7ba6de85c372a028935fa2b07c1621c94/src/main/java/org/example/project2/domain/matching/service/proposal/MatchProposalInteractionService.java), [409 처리 화면](https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/blob/310120e7ba6de85c372a028935fa2b07c1621c94/frontend/src/pages/matching-request.js#L592-L634), [동시성 통합 테스트](https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/blob/310120e7ba6de85c372a028935fa2b07c1621c94/src/test/java/org/example/project2/domain/matching/service/proposal/MatchProposalConcurrencyIntegrationTest.java), [PR \#46](https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/pull/46), [PR \#50](https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/pull/50)
 
@@ -283,29 +251,32 @@ flowchart TB
 - **역할 분리:** PostgreSQL은 요청·제안·매칭을 보존하고, Valkey는 사용자별 중복 진입 방지와 TTL 5분의 대기 상태를 맡습니다.
 - **최초 등록과 롤백 보상:** `SET NX`와 예약 토큰으로 사용자 키를 선점한 뒤 DB에 요청을 저장하고, DB 커밋 전에 Lua로 대기 키와 위치 등록을 함께 활성화합니다. DB가 롤백되면 요청 ID가 일치하는 키만 정리하고, 예약 해제도 토큰이 같을 때만 수행해 다른 요청의 키를 지우지 않습니다.
 - **커밋 후 반영:** 제안 생성·확정·취소·대기 복귀에 따른 Valkey 갱신과 매칭 결과 WebSocket 알림은 DB 커밋 뒤에 수행합니다. 이 단계에서 Valkey 반영이 실패해도 이미 커밋된 DB 상태는 되돌리지 않습니다.
-- **대기 요청 보정:** 5초 간격의 작업이 DB의 `WAITING` 요청을 100건씩 순회합니다. 요청마다 별도 트랜잭션에서 행을 잠근 뒤 아래 표에 따라 처리합니다.
+- **대기 요청 보정:** 5초 간격의 작업이 DB의 `WAITING` 요청을 100건씩 순회합니다. 요청마다 별도 트랜잭션에서 행을 잠근 뒤 대기 키와 남은 유효 시간에 따라 처리합니다.
 
-| 상태 | 처리 |
+**복구 판단 흐름**
+
+대기 유효 시간은 매칭 상대를 기다릴 수 있는 5분입니다. PostgreSQL에 기록된 시각을 기준으로 남은 시간을 계산하며, 복구 시 5분을 새로 부여하지 않습니다.
+
+PostgreSQL의 `WAITING` 요청 확인 → Valkey 대기 키 조회
+
+- **Valkey 조회 실패 →** DB 상태 유지, 다음 순회에서 재시도
+- **대기 키 존재 →** 현재 상태 유지
+- **키 누락·대기 유효 시간 내 →** 남은 TTL로 대기 키·위치 등록 복구
+- **키 누락·대기 유효 시간 초과 →** DB 요청 만료 후 Valkey 정리
+
+**검증과 결과 (프로젝트 종료 후)**
+
+**Valkey 중단·재시작 시나리오**
+
+| 장애 중 | 재시작 후 보정 |
 | :---- | :---- |
-| 최초 대기 등록 뒤 DB 롤백 | 요청 ID가 일치하는 Valkey 키 정리 시도 |
-| DB는 `WAITING`, 대기 키 누락, 대기 시간 남음 | 남은 TTL로 대기 키와 위치 등록 복구 |
-| DB는 `WAITING`, 대기 키 누락, 대기 시간 경과 | DB 요청 만료 후 Valkey 정리 |
-| Valkey 조회 실패 | DB 상태를 유지하고 다음 순회에서 재시도 |
+| 대기 요청 **205건의 DB 상태·수정 시각 유지** | 대기 유효 시간에 따라 **102건 복구 + 103건 만료**, 미처리 **0건** |
 
-**검증과 결과 (2026-11-05, 프로젝트 종료 후)**
+장애 중에는 DB 상태를 유지하고, 재시작 후에는 남은 대기 유효 시간에 따라 **102건을 복구하고 103건을 만료 처리**했습니다. 별도 반복 보정 실험에서도 기존 만료 시각과 DB 수정 시각이 유지됐습니다.
 
-개인 저장소의 `ee7d2ba`에서 실제 PostgreSQL·Valkey를 사용해 대기 정보 삭제, TTL 만료, 컨테이너 중단·재시작과 반복 보정을 검증했습니다. 테스트마다 대기 요청 205건과 비대기 상태의 비교 요청 4건을 새로 만들었습니다.
+추가로 대기 키 삭제 시 **205건 복구**, 대기 유효 시간 초과 시 **205건 만료**를 각각 확인했습니다.
 
-| 상황 | 대기 대상 | 복구 | 만료 | 미처리·보류 |
-| :---- | :---- | :---- | :---- | :---- |
-| 대기 키 삭제 후 보정 | 205건 | 205건 | 0건 | 0건 |
-| Valkey TTL 만료·DB 대기 시간 경과 후 보정 | 205건 | 0건 | 205건 | 0건 |
-| Valkey 중단 중 보정 | 205건 | 0건 | 0건 | 205건 |
-| **Valkey 재시작 후 보정** | **205건** | **102건** | **103건** | **0건** |
-
-누락 정보 복구와 만료 처리는 **100 → 100 → 5건**의 배치로 전체 요청을 순회했습니다. 장애 중에는 205건의 DB 상태·수정 시각을 유지하고, 재시작 후 남은 대기 시간이 있는 102건을 복구하고 시간이 지난 103건을 만료 처리했습니다. 별도 반복 보정 실험에서는 전체 205건을 최초 복구한 뒤 배치를 9회 더 호출해, 전체 요청을 3차례 더 순회해도 신규 보정 0건과 기존 만료 시각·DB 수정 시각이 유지됨을 확인했습니다.
-
-검증 조건과 범위: Windows의 로컬 Docker 환경(PostgreSQL 17.10·Valkey 8.1.9), 명령 타임아웃 200ms에서 실행했습니다. 스케줄러 초기 지연을 1시간으로 설정하고 보정 메서드를 직접 호출했습니다. DB 대기 시간 경과는 기록 시각을 301초 이전으로 설정하고 Valkey 키는 실제 2초 TTL로 만료시켰습니다. 검증 버전에는 Redis 명령 타임아웃 설정을 Lettuce에 반영한 수정이 포함됩니다. 각 복구 시나리오는 1회 측정한 결과로, 운영 환경의 복구 시간이나 WebSocket 알림 전달까지 보장하지 않습니다.
+**검증 범위:** 로컬 Docker의 실제 PostgreSQL·Valkey에서 시나리오별 1회 검증했습니다. 보정 메서드를 직접 호출했으며, 운영 환경의 복구 시간과 WebSocket 알림 전달은 검증하지 않았습니다. [상세 검증 조건](https://github.com/ImJhoon/majuhankki/blob/ee7d2ba113e892bb92dd693223dcfc58d3acb95b/performance/%EB%A7%A4%EC%B9%AD_%EC%8B%A0%EB%A2%B0%EC%84%B1_%EA%B2%80%EC%A6%9D_%EA%B2%B0%EA%B3%BC.md)
 
 최신 검증 근거: [측정 보고서](https://github.com/ImJhoon/majuhankki/blob/ee7d2ba113e892bb92dd693223dcfc58d3acb95b/performance/%EB%A7%A4%EC%B9%AD_%EC%8B%A0%EB%A2%B0%EC%84%B1_%EA%B2%80%EC%A6%9D_%EA%B2%B0%EA%B3%BC.md), [실제 Valkey 복구 테스트](https://github.com/ImJhoon/majuhankki/blob/ee7d2ba113e892bb92dd693223dcfc58d3acb95b/src/test/java/org/example/project2/domain/matching/service/request/RealtimeMatchWaitingRecoveryIntegrationTest.java), [실행 스크립트](https://github.com/ImJhoon/majuhankki/blob/ee7d2ba113e892bb92dd693223dcfc58d3acb95b/performance/run-reliability.ps1)
 
@@ -317,6 +288,6 @@ flowchart TB
 
 ### 5\. 그 밖의 작업
 
-- **양방향 조건 기반 후보 선정:** 두 사람 각각의 탐색 반경(PostGIS `ST_DWithin`)과 식사 시간 30분 이내 조건을 먼저 확인한 뒤 성향 점수를 계산했습니다. 태그와 자유 서술 임베딩 점수를 80:20으로 결합하고, 제안 시점의 양방향 점수·근거·산식 버전을 함께 저장했습니다. 본인 구현(PR #55)은 양방향 점수 중 낮은 값을 기준으로 정렬했고, 이후 팀원 PR #74에서 요청자→후보 점수 정렬과 다중 임베딩 계산으로 바뀌었습니다. ([양방향 조건 필터](https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/blob/310120e7ba6de85c372a028935fa2b07c1621c94/src/main/java/org/example/project2/domain/matching/service/candidate/BidirectionalCandidateSearchService.java), [본인 구현 시점의 후보 선정](https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/blob/bfa2ab3198ec0638df3785c6fb122299af561d28/src/main/java/org/example/project2/domain/matching/service/proposal/MatchProposalSelectionService.java), [PR \#55](https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/pull/55), [후속 팀 변경 \#74](https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/pull/74))
-- **후기 작성 정책과 다시한끼 지수:** 완료된 매칭의 활성 참여자만 종료 후 7일 안에 상대에게 후기를 작성할 수 있게 했습니다. 사전 중복 조회와 DB UNIQUE 제약을 함께 사용하고, 저장 시 제약 충돌을 중복 후기 응답으로 변환합니다. 지수는 `(2.5 + 확실히 다시 + 0.5 × 아마도 다시) / (5 + 유효 후기 수) × 100`으로 계산하며 산식 버전을 관리합니다. 수식상 가상 후기 5건을 반영해 소수 후기의 점수 영향을 완화합니다. ([후기 작성](https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/blob/310120e7ba6de85c372a028935fa2b07c1621c94/src/main/java/org/example/project2/domain/review/service/ReviewCommandService.java), [지수 산식](https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/blob/310120e7ba6de85c372a028935fa2b07c1621c94/src/main/java/org/example/project2/domain/review/service/ReviewScorePolicy.java), [PR \#61](https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/pull/61))
-- **OAuth 일회성 교환 코드:** OAuth 로그인 결과를 토큰으로 교환하는 코드의 해시를 Valkey 키로 저장하고, 유효 기간을 2분으로 제한했습니다. 교환 시 `GETDEL`로 조회와 삭제를 한 번에 수행하며, 코드를 소비한 뒤 활성 회원인지 확인하고 토큰을 발급합니다. ([교환 코드](https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/blob/310120e7ba6de85c372a028935fa2b07c1621c94/src/main/java/org/example/project2/domain/auth/service/oauth/OAuthAuthorizationCodeService.java), [토큰 교환](https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/blob/310120e7ba6de85c372a028935fa2b07c1621c94/src/main/java/org/example/project2/domain/auth/service/oauth/OAuthTokenExchangeService.java), [PR \#24](https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/pull/24))
+- **양방향 조건 기반 후보 선정:** 두 사람의 거리·식사 시간 조건을 확인하고, 양방향 성향 점수 중 낮은 값을 기준으로 후보를 정렬했습니다. ([양방향 조건 필터](https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/blob/310120e7ba6de85c372a028935fa2b07c1621c94/src/main/java/org/example/project2/domain/matching/service/candidate/BidirectionalCandidateSearchService.java), [본인 구현 시점의 후보 선정](https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/blob/bfa2ab3198ec0638df3785c6fb122299af561d28/src/main/java/org/example/project2/domain/matching/service/proposal/MatchProposalSelectionService.java), [PR \#55](https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/pull/55), [후속 팀 변경 \#74](https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/pull/74))
+- **후기 작성 정책과 다시한끼 지수:** 매칭 참여자만 종료 후 7일 안에 후기를 작성하도록 제한하고, DB UNIQUE 제약으로 중복 저장을 막았습니다. 소수 후기의 점수 영향을 완화하는 다시한끼 지수도 구현했습니다. ([후기 작성](https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/blob/310120e7ba6de85c372a028935fa2b07c1621c94/src/main/java/org/example/project2/domain/review/service/ReviewCommandService.java), [지수 산식](https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/blob/310120e7ba6de85c372a028935fa2b07c1621c94/src/main/java/org/example/project2/domain/review/service/ReviewScorePolicy.java), [PR \#61](https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/pull/61))
+- **OAuth 일회성 교환 코드:** 소셜 로그인 결과를 서비스 토큰으로 교환하기 위한 임시 코드를 발급했습니다. 유효 기간은 2분이며, Valkey `GETDEL`로 조회·삭제를 한 번에 수행해 한 번만 교환할 수 있도록 했습니다. ([교환 코드](https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/blob/310120e7ba6de85c372a028935fa2b07c1621c94/src/main/java/org/example/project2/domain/auth/service/oauth/OAuthAuthorizationCodeService.java), [토큰 교환](https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/blob/310120e7ba6de85c372a028935fa2b07c1621c94/src/main/java/org/example/project2/domain/auth/service/oauth/OAuthTokenExchangeService.java), [PR \#24](https://github.com/prgrms-aibe-devcourse/AIBE7-Project2-Team04/pull/24))

@@ -1,0 +1,37 @@
+.application-portfolio { --accent: #28506d; --brand: #bbd7e8; --accent-surface: #eef5fa; --surface: #f4f6f8; }
+.application-portfolio main { max-width: 820px; padding-top: 48px; }
+.application-portfolio h1 { font-size: clamp(30px, 5vw, 44px); line-height: 1.4; letter-spacing: -.04em; margin-bottom: 20px; }
+.application-portfolio main > p:first-of-type { max-width: 720px; font-size: 20px; line-height: 1.85; color: var(--ink); word-break: keep-all; }
+.application-label { color: var(--muted); font-size: 12px; text-align: right; }
+.application-portfolio h2 { font-size: 28px; line-height: 1.5; letter-spacing: -.035em; margin-bottom: 24px; }
+.application-portfolio h3 { font-size: 24px; line-height: 1.55; letter-spacing: -.03em; margin: 52px 0 24px; padding-top: 26px; border-top: 1px solid var(--line); }
+.application-portfolio .document-section { margin-top: 52px; padding-top: 30px; }
+.application-portfolio main > .document-section:first-of-type { margin-top: 32px; }
+.application-portfolio p { overflow-wrap: anywhere; }
+.application-portfolio p > img { display: block; width: 100%; height: auto; margin: 24px 0; border: 1px solid var(--line); border-radius: 8px; }
+.application-portfolio .sources { font-size: 12px; line-height: 1.9; }
+.application-portfolio .sources a { display: inline-block; margin-right: 10px; }
+.application-portfolio .detail-list { margin-top: 12px; }
+.application-portfolio .detail-list li { margin-bottom: 14px; }
+.application-portfolio th:first-child, .application-portfolio td:first-child { width: 28%; }
+.application-portfolio .result-chart--featured { background: var(--accent-surface); }
+.application-portfolio .result-row--after .result-bar { background: #739dbb; }
+@media (max-width: 680px) {
+  .application-portfolio main { padding-top: 30px; }
+  .application-portfolio h2 { font-size: 24px; }
+  .application-portfolio h3 { font-size: 21px; margin-top: 38px; }
+  .application-portfolio main > p:first-of-type { font-size: 18px; }
+  .application-label { max-width: 130px; font-size: 11px; }
+  .application-portfolio table { min-width: 480px; }
+}
+@media print {
+  .application-portfolio main { max-width: none; padding-top: 12px; }
+  .application-portfolio h1 { font-size: 25pt; }
+  .application-portfolio main > p:first-of-type { font-size: 12pt; }
+  .application-portfolio h2 { font-size: 18pt; break-after: avoid-page; }
+  .application-portfolio h3 { font-size: 15pt; margin-top: 24px; padding-top: 16px; break-after: avoid-page; }
+  .application-portfolio .document-section { margin-top: 24px; padding-top: 20px; }
+  .application-portfolio table { min-width: 0; }
+  .application-portfolio p > img { max-height: 100mm; object-fit: contain; }
+  .application-portfolio .sources { font-size: 8pt; }
+}
